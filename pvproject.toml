@@ -2,7 +2,7 @@
 name = "my_playbook_repo"
 version = "0.0.1"
 description = ""
-authors = ["USER NAME <myuser@users.noreply.github.com>"]
+authors = ["HamzaXgrid <myuser@users.noreply.github.com>"]
 
 [tool.poetry.dependencies]
 # if your playbook requires additional dependencies, add them here
