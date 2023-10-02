@@ -15,15 +15,15 @@ def list_files_on_persistent_volume(event: PodEvent):
     except Exception as e:
         # Handle any exceptions if the directory doesn't exist or can't be accessed
         error_message = f"Error: {str(e)}"
-        event.add_enrichment(SlackSectionBlock([SlackTextBlock(f"*{error_message}*")]))
+        event.add_enrichment(MarkdownBlock("*Oh no!* An alert occurred on "))
         return
 
     # Prepare a message with the list of files
     file_list_message = f"Files in the Persistent Volume ({persistent_volume_path}):\n"
     file_list_message += "\n".join(files)
 
-    # Create a SlackTextBlock with the file list
-    file_list_block = SlackTextBlock(file_list_message)
+    # Create a MarkdownBlock with the file list
+    file_list_block = MarkdownBlock(file_list_message)
 
     # Add the file list as an enrichment
-    event.add_enrichment(SlackSectionBlock([file_list_block]))
+    event.add_enrichment(MarkdownBlock("*Oh no!* An alert occurred on "))
