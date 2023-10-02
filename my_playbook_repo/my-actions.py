@@ -1,4 +1,4 @@
-from robusta.api import *
+from robusta.api import TextBlock, MarkdownBlock  # Import TextBlock and MarkdownBlock
 import os
 
 @action
@@ -24,9 +24,9 @@ def list_files_on_persistent_volume(event: PodEvent):
     file_list_message += "\n".join(files)
 
     # Create a text block with the file list
-    file_list_block = TextBlock(file_list_message)
+    file_list_block = MarkdownBlock(file_list_message)  # Use MarkdownBlock for Slack formatting
 
     # Add the file list as an enrichment
     event.add_enrichment([
-        MarkdownBlock(file_list_block)
+        file_list_block
     ])
