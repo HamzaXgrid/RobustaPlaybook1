@@ -67,7 +67,7 @@ helm upgrade robusta robusta/robusta --values=generated_values.yaml --set cluste
 ```
 3. Invoke a trigger using below command.
 ```bash
-robusta playbooks trigger on_pod_update
+robusta playbooks trigger my_action name=new-pv-pod namespace=default 
 ```
 ## Task 5: Write a function on python which mounts a persistent volume and send the list of files present on that persistent volume to a sink.
 It is somewhat like Zapier/IFTTT for devops, with an emphasis on prebuilt automations and not just "build your own".
