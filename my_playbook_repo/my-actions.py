@@ -1,8 +1,5 @@
 from robusta.api import *
-@action
-def pod_change_monitor(event: PodChangeEvent):
-   logging.info(f"new object: {event.obj})
-   logging.info(f"old object: {event.old_obj})
+
 @action
 def my_action(event: PodEvent):
     # we have full access to the pod on which the alert fired

@@ -21,11 +21,16 @@ kubectl get nodes
 ```
 
 ## Task 2: Install Robusta on your Kubernetes cluster
-1. Install the robusta-cli: This step is needed to generate the values file for helm chart installation.
+1. Create python environment.
+```bash
+python3.10 -m venv robusta
+source robusta/bin/activate
+```
+2. Install the robusta-cli: This step is needed to generate the values file for helm chart installation.
 ```bash
 python3 -m pip install -U robusta-cli --no-cache
 ```
-2. Generate a generated_values.yaml for the Robusta chart:
+3. Generate a generated_values.yaml for the Robusta chart:
 ```bash
 # An interactive session where you can configure sinks 
 # such as receiving alerts to a particular Slack channel, MS Teams. 
@@ -44,6 +49,26 @@ helm install robusta robusta/robusta -f ./generated_values.yaml --set clusterNam
 kubectl apply -f Scenario_1.yaml
 ```
 ## Task 4: Create your [playbook repository](https://docs.robusta.dev/master/developer-guide/actions/playbook-repositories.html), push that to GitHub and use the Github link in your Robusta's generated-values.yaml file.
+1. Add the following code in the generated.yaml file after setting up the repository.
+```bash
+playbookRepos:
+  my_extra_playbooks:
+    url: https://github.com/HamzaXgrid/RobustaPlaybook1.git
+playbooksPersistentVolume: true
+customPlaybooks:
+- triggers:
+  - on_pod_update: {}
+  actions:
+  - my_action: {}
+```
+2. Now update the values in the helm.
+```bash
+helm upgrade robusta robusta/robusta --values=generated_values.yaml --set clusterName=kind-mycluster-1
+```
+3. Invoke a trigger using below command.
+```bash
+robusta playbooks trigger on_pod_update
+```
 ## Task 5: Write a function on python which mounts a persistent volume and send the list of files present on that persistent volume to a sink.
 It is somewhat like Zapier/IFTTT for devops, with an emphasis on prebuilt automations and not just "build your own".
 ## Task 6: Make sure to cover all scenarios
