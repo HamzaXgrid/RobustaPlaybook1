@@ -1,116 +1,32 @@
-import logging
 
-from hikaru.model.rel_1_26 import (
-    Container,
-    ObjectMeta,
-    PersistentVolumeClaim,
-    PersistentVolumeClaimVolumeSource,
-    PodList,
-    PodSpec,
-    Volume,
-    VolumeMount,
-)
-from robusta.api import (
-    FileBlock,
-    Finding,
-    FindingSource,
-    FindingType,
-    MarkdownBlock,
-    PersistentVolumeEvent,
-    RobustaPod,
-    action,
-)
-
-
+from robusta.api import *
+import os
 @action
-def volume_analysis(event: PersistentVolumeEvent):
-    """
-    This action shows you the files present on your persistent volume
-    """
-    function_name = "volume_analysis"
-    # https://docs.robusta.dev/master/extending/actions/findings-api.html
-    finding = Finding(
-        title="Persistent Volume content",
-        source=FindingSource.MANUAL,
-        aggregation_key=function_name,
-        finding_type=FindingType.REPORT,
-        failure=False,
-    )
-
-    if not event.get_persistentvolume():
-        logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
-        return
-
-    # Get persistent volume data the object contains data related to PV like metadata etc
+def list_files_on_persistent_volume(event: PersistentVolumeEvent):
+    # Get the pod object from the event
     pv = event.get_persistentvolume()
-    pv_claimref = pv.spec.claimRef
-    reader_pod = None
+
+    # Specify the path to the Persistent Volume
+    persistent_volume_path = "/mnt/data" 
 
     try:
+        # List all files in the specified path
+        files = os.listdir(persistent_volume_path)
+    except Exception as e:
+        # Handle any exceptions if the directory doesn't exist or can't be accessed
+        error_message = f"Error: {str(e)}"
+        event.add_enrichment(MarkdownBlock("*Oh no!* An alert occurred on "))
+        return
 
-        if pv_claimref is not None:
-            # Do this if there is a PVC attached to PV
-            pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
-                name=pv_claimref.name, namespace=pv_claimref.namespace
-            ).obj
-            pod = get_pod_related_to_pvc(pvc_obj, pv)
+    # Prepare a message with the list of files
+    file_list_message = f"Files in the Persistent Volume ({persistent_volume_path}):\n"
+    file_list_message += "\n".join(files)
 
-            if pod is not None:
-                # Do this if a Pod is using PVC
+    # Create a MarkdownBlock with the file list
+    file_list_block = MarkdownBlock(file_list_message)
 
-                volume_mount_name = None
-
-                # Find name of the mounted volume on pod
-                for volume in pod.spec.volumes:
-                    if volume.persistentVolumeClaim.claimName == pv_claimref.name:
-                        volume_mount_name = volume.name
-                        break
-
-                # Use name of the mounted volume to find the correct volume mount
-                container_found_flag = False
-                container_volume_mount = None
-                for container in pod.spec.containers:
-                    if container_found_flag:
-                        break
-                    for volume_mount in container.volumeMounts:
-                        if volume_mount_name == volume_mount.name:
-                            container_volume_mount = volume_mount
-                            container_found_flag = True
-                            break
-
-                result = pod.exec(f"ls -R {container_volume_mount.mountPath}/")  # type: ignore
-                finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
-                finding.add_enrichment(
-                    [
-                        FileBlock("Data.txt: ", result.encode()),
-                    ]
-                )
-
-            else:
-                # Do this if no Pod is attached to PVC
-                reader_pod = persistent_volume_reader(persistent_volume=pv)
-                result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
-                finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
-                finding.add_enrichment(
-                    [
-                        FileBlock("Data.txt: ", result.encode()),
-                    ]
-                )
-        else:
-            finding.add_enrichment(
-                [
-                    MarkdownBlock(f"Persistent volume named {pv.metadata.name} have no persistent volume claim."),
-                ]
-            )
-
-    finally:
-        # delete the reader pod
-        if reader_pod is not None:
-            reader_pod.delete()
-
-    event.add_finding(finding)
-
-
+    # Add the file list as an enrichment
+    event.add_enrichment(MarkdownBlock("*Oh no!* An alert occurred on "))
 # returns a pod that mounts the given persistent volume
 
 
@@ -162,3 +78,4 @@ def get_pod_related_to_pvc(pvc_obj, pv_obj):
             if volume.persistentVolumeClaim:
                 if volume.persistentVolumeClaim.claimName == pv_obj.spec.claimRef.name:
                     return pod
+
