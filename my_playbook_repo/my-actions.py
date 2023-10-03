@@ -28,8 +28,8 @@ import subprocess
 @action
 def list_files_on_persistent_volume(event: Event):
     # Specify the parameters needed for the action
-    pv_name = event.get_param("pv_name")
-    namespace = event.get_param("namespace")
+    pv_name = "new-pv-pod"
+    namespace = "default"
 
     # Specify the container name from your Pod definition
     container_name = "new-pv-container"
