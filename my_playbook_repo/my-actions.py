@@ -35,7 +35,7 @@ def list_files_on_persistent_volume(event: PersistentVolumeEvent):
     container_name = "new-pv-container"
 
     # Command to list files in the specified directory within the Pod
-    command = ["kubectl", "exec", "-n", namespace, "-c", container_name, pv_name, "ls", "-R", "/usr/share/nginx/html"]
+    command = ["ls", "-R", "/usr/share/nginx/html"]
 
     try:
         # Run the command and capture the output
