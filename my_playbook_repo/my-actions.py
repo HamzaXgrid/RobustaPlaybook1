@@ -1,6 +1,8 @@
 
+
 from robusta.api import *
 import os
+
 @action
 def list_files_on_persistent_volume(event: PersistentVolumeEvent):
     # Get the pod object from the event
@@ -12,22 +14,21 @@ def list_files_on_persistent_volume(event: PersistentVolumeEvent):
     try:
         # List all files in the specified path
         files = os.listdir(persistent_volume_path)
+
+        # Prepare a message with the list of files
+        file_list_message = f"Files in the Persistent Volume ({persistent_volume_path}):\n"
+        file_list_message += "\n".join(files)
+
+        # Create a MarkdownBlock with the file list
+        file_list_block = MarkdownBlock(file_list_message)
+
+        # Add the file list as an enrichment
+        event.add_enrichment(file_list_block)
     except Exception as e:
         # Handle any exceptions if the directory doesn't exist or can't be accessed
         error_message = f"Error: {str(e)}"
-        event.add_enrichment(MarkdownBlock("*Oh no!* An alert occurred on "))
-        return
+        event.add_enrichment(MarkdownBlock(error_message))
 
-    # Prepare a message with the list of files
-    file_list_message = f"Files in the Persistent Volume ({persistent_volume_path}):\n"
-    file_list_message += "\n".join(files)
-
-    # Create a MarkdownBlock with the file list
-    file_list_block = MarkdownBlock(file_list_message)
-
-    # Add the file list as an enrichment
-    event.add_enrichment(MarkdownBlock("*Oh no!* An alert occurred on "))
-# returns a pod that mounts the given persistent volume
 
 
 def persistent_volume_reader(persistent_volume):
