@@ -26,48 +26,17 @@ from robusta.api import *
 import subprocess
 
 @action
-def list_files_on_persistent_volume(event: PersistentVolumeEvent):
-    # Specify the parameters needed for the action
-    pv_name = "new-pv-pod"
-    namespace = "default"
-
-    # Specify the container name from your Pod definition
-    container_name = "new-pv-container"
-
-    # Command to list files in the specified directory within the Pod
-    command = ["ls", "-R", "/usr/share/nginx/html"]
-
-    try:
-        # Run the command and capture the output
-        result = subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
-
-        # Prepare a response message with the list of files
-        response_message = f"Files on the PV ({pv_name}):\n{result}"
-
-        # Set the action response
-        event.set_response(response_message)
-    except subprocess.CalledProcessError as e:
-        # Handle any errors that occur while running the command
-        error_message = f"Error: {e.output}"
-
-        # Set the action response as an error message
-        event.set_error(error_message)
-
-@action
-def list_files_on_persistent_volume1(event: PersistentVolumeEvent):
+def list_files_on_persistent_volume1(event: PodEvent):
     # Get the pod object from the event
-    pv = event.get_persistentvolume()
+    
 
     # Specify the path to the Persistent Volume
-    persistent_volume_path = "/mnt/data" 
+    persistent_volume_path = "/usr/share/nginx/html" 
 
+    print("111111111fffffffffffffffffff")
     try:
         # List all files in the specified path
         files = os.listdir(persistent_volume_path)
-
-        # Prepare a message with the list of files
-      
-        # Add the file list as an enrichment
         event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
     except Exception as e:
         # Handle any exceptions if the directory doesn't exist or can't be accessed
