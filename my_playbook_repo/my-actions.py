@@ -85,10 +85,15 @@ def volume_analysis(event: PersistentVolumeEvent):
                 print("DATA is ")
                 print(container_volume_mount.mountPath)
                 result = pod.exec(f"ls -R {container_volume_mount.mountPath}/")  # type: ignore
+                files = os.listdir(container_volume_mount.mountPath)
+
+        # Prepare a message with the list of files
+                result1 = f"Files in the Persistent Volume ({persistent_volume_path}):\n"
+                result1 += "\n".join(files)
                 finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
                 finding.add_enrichment(
                     [
-                        FileBlock("Data.txt: ", result.encode()),
+                        FileBlock("Data.txt: ", result1.encode()),
                     ]
                 )
 
