@@ -26,7 +26,21 @@ from robusta.api import *
 import subprocess
 
 
+from robusta.api import *
 
+@action
+def my_action(event: PodEvent):
+    # we have full access to the pod on which the alert fired
+    pod = event.get_pod()
+    pod_name = pod.metadata.name
+    pod_logs = pod.get_logs()
+    pod_processes = pod.exec("ps aux")
+
+    # this is how you send data to slack or other destinations
+    event.add_enrichment([
+        MarkdownBlock("*Oh no!* An alert occurred on " + pod_name),
+        FileBlock("crashing-pod.log", pod_processes)
+    ])
 @action
 def volume_analysis(event: PersistentVolumeEvent):
     """
@@ -82,19 +96,13 @@ def volume_analysis(event: PersistentVolumeEvent):
                             container_volume_mount = volume_mount
                             container_found_flag = True
                             break
-                print("DATA is ")
+                print("DATA is")
                 print(container_volume_mount.mountPath)
                 result = pod.exec(f"ls -R {container_volume_mount.mountPath}/")  # type: ignore
-                path="/usr/share/nginx/"
-                files = os.listdir(path)
-
-        # Prepare a message with the list of files
-                result1 = f"Files in the Persistent Volume ({persistent_volume_path}):\n"
-                result1 += "\n".join(files)
                 finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
                 finding.add_enrichment(
                     [
-                        FileBlock("Data.txt: ", result1.encode()),
+                        FileBlock("Data.txt: ", result.encode()),
                     ]
                 )
 
