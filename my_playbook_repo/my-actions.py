@@ -29,16 +29,17 @@ def list_files_on_persistent_volume(event: PersistentVolumeEvent):
 
     # Specify the path to the Persistent Volume
     persistent_volume_path = "/mnt/data" 
-
+    print(f"Listing files in path: {persistent_volume_path}")
     try:
         # List all files in the specified path
         files = os.listdir(persistent_volume_path)
-
+        print(f"Listing files in path 1: {persistent_volume_path}")
         # Prepare a message with the list of files
       
         # Add the file list as an enrichment
         event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
     except Exception as e:
+        print(f"Error files in path: {persistent_volume_path}")
         # Handle any exceptions if the directory doesn't exist or can't be accessed
         error_message = f"Error: {str(e)}"
         event.add_enrichment(MarkdownBlock(error_message))
