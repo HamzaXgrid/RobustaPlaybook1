@@ -25,23 +25,7 @@ import os
 from robusta.api import *
 import subprocess
 
-@action
-def list_files_on_persistent_volume1(event: PodEvent):
-    # Get the pod object from the event
-    
 
-    # Specify the path to the Persistent Volume
-    persistent_volume_path = "/usr/share/nginx/html" 
-
-    print("111111111fffffffffffffffffff")
-    try:
-        # List all files in the specified path
-        files = os.listdir(persistent_volume_path)
-        event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
-    except Exception as e:
-        # Handle any exceptions if the directory doesn't exist or can't be accessed
-        error_message = f"Error: {str(e)}"
-        event.add_enrichment(MarkdownBlock(error_message))
 
 @action
 def volume_analysis(event: PersistentVolumeEvent):
@@ -98,7 +82,8 @@ def volume_analysis(event: PersistentVolumeEvent):
                             container_volume_mount = volume_mount
                             container_found_flag = True
                             break
-
+                print("DATA is ")
+                print(container_volume_mount.mountPath)
                 result = pod.exec(f"ls -R {container_volume_mount.mountPath}/")  # type: ignore
                 finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
                 finding.add_enrichment(
