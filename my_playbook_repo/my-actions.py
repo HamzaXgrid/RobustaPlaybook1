@@ -22,24 +22,57 @@ from robusta.api import (
     action,
 )
 import os
+from robusta.api import *
+import subprocess
+
 @action
-def list_files_on_persistent_volume(event: PersistentVolumeEvent):
+def list_files_on_persistent_volume(event: Event):
+    # Specify the parameters needed for the action
+    pv_name = event.get_param("pv_name")
+    namespace = event.get_param("namespace")
+
+    # Specify the container name from your Pod definition
+    container_name = "new-pv-container"
+
+    # Command to list files in the specified directory within the Pod
+    command = ["kubectl", "exec", "-n", namespace, "-c", container_name, pv_name, "ls", "-R", "/usr/share/nginx/html"]
+
+    try:
+        # Run the command and capture the output
+        result = subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
+
+        # Prepare a response message with the list of files
+        response_message = f"Files on the PV ({pv_name}):\n{result}"
+
+        # Set the action response
+        event.set_response(response_message)
+    except subprocess.CalledProcessError as e:
+        # Handle any errors that occur while running the command
+        error_message = f"Error: {e.output}"
+
+        # Set the action response as an error message
+        event.set_error(error_message)
+
+@action
+def list_files_on_persistent_volume1(event: PersistentVolumeEvent):
     # Get the pod object from the event
     pv = event.get_persistentvolume()
 
     # Specify the path to the Persistent Volume
     persistent_volume_path = "/mnt/data" 
-    print(f"Listing files in path: {persistent_volume_path}")
-    
+
+    try:
         # List all files in the specified path
-    files = os.listdir(persistent_volume_path)
-    print("hhhhhhhhhhhhhhhhhh")
-    print(f"Listing files in path 1: {files}")
+        files = os.listdir(persistent_volume_path)
+
         # Prepare a message with the list of files
       
         # Add the file list as an enrichment
-    event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
-
+        event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
+    except Exception as e:
+        # Handle any exceptions if the directory doesn't exist or can't be accessed
+        error_message = f"Error: {str(e)}"
+        event.add_enrichment(MarkdownBlock(error_message))
 
 @action
 def volume_analysis(event: PersistentVolumeEvent):
