@@ -26,7 +26,7 @@ from robusta.api import *
 import subprocess
 
 @action
-def list_files_on_persistent_volume(event: Event):
+def list_files_on_persistent_volume(event: PersistentVolumeEvent):
     # Specify the parameters needed for the action
     pv_name = "new-pv-pod"
     namespace = "default"
