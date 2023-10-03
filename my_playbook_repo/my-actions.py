@@ -21,6 +21,7 @@ from robusta.api import (
     RobustaPod,
     action,
 )
+import os
 @action
 def list_files_on_persistent_volume(event: PersistentVolumeEvent):
     # Get the pod object from the event
