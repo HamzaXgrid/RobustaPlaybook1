@@ -43,6 +43,19 @@ def my_action(event: PodEvent):
     ])
 @action
 def volume_analysis(event: PersistentVolumeEvent):
+    pv = event.get_persistentvolume()
+    if pv.spec.claimRef is not none:
+        print("Claim is ")
+        print(pv.spec.claimRef)
+        pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
+                name=pv_claimref.name, namespace=pv_claimref.namespace
+            ).obj
+    event.add_enrichment([
+        MarkdownBlock("*Oh no!* An alert occurred on " + pv + pvc_obj)
+    ])
+
+@action
+def volume_analysis(event: PersistentVolumeEvent):
     """
     This action shows you the files present on your persistent volume
     """
