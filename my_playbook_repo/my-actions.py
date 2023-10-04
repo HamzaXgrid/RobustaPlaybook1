@@ -202,9 +202,10 @@ def volume_analysis4(event: PersistentVolumeEvent):
         persistent_VolumeClaimNameSpace=persistent_Volume.spec.claimRef.namespace
     pv=persistent_Volume.metadata.name
     list_of_Pods=PodList.listNamespacedPod(persistent_VolumeClaimNameSpace).obj
+    print("Pods ARE "+list_of_Pods)
     event.add_enrichment([
         MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace),
-        FileBlock("PV.log", list_of_Pods)
+        FileBlock("PV.log", pv)
     ])
 
 def persistent_volume_reader(persistent_volume):
