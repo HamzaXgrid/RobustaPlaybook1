@@ -58,17 +58,11 @@ def volume_analysis1(event: PersistentVolumeEvent):
 
 def get_pvc_attached_to_pv(pv_name):
     try:
-        # Load the Kubernetes configuration (typically located at ~/.kube/config)
     
         os.environ['KUBECONFIG'] = '/root/.kube/config'
-
-# Load the Kubernetes configuration
         config.load_kube_config()
-        # Create a Kubernetes API client
         api = client.CoreV1Api()
-
-        # Get the PV object
-        pv = api.read_persistent_volume(pv_name)
+        pv = api.read_persistent_volume(pv_name.metadata.name)
 
         # Check if the PV has a bound PVC
         if pv.spec.claim_ref:
@@ -107,9 +101,9 @@ def volume_analysis(event: PersistentVolumeEvent):
 
     # Get persistent volume data the object contains data related to PV like metadata etc
     pv = event.get_persistentvolume()
-    print("PV is ",pv)
+    #print("PV is ",pv)
     pv_claimref = pv.spec.claimRef
-    print("pv_claimref is ",pv_claimref)
+    #print("pv_claimref is ",pv_claimref)
     reader_pod = None
 
     try:
@@ -119,9 +113,9 @@ def volume_analysis(event: PersistentVolumeEvent):
             pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
                 name=pv_claimref.name, namespace=pv_claimref.namespace
             ).obj
-            print("pvc_obj is ",pvc_obj)
+            #print("pvc_obj is ",pvc_obj)
             pod = get_pod_related_to_pvc(pvc_obj, pv)
-            print("pod is ",pod)
+            #print("pod is ",pod)
             if pod is not None:
                 # Do this if a Pod is using PVC
 
@@ -144,8 +138,8 @@ def volume_analysis(event: PersistentVolumeEvent):
                             container_volume_mount = volume_mount
                             container_found_flag = True
                             break
-                print("DATA is")
-                print(container_volume_mount.mountPath)
+                #print("DATA is")
+                #print(container_volume_mount.mountPath)
                 result = pod.exec(f"ls -R {container_volume_mount.mountPath}/")  # type: ignore
                 finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
                 finding.add_enrichment(
@@ -230,3 +224,19 @@ def get_pod_related_to_pvc(pvc_obj, pv_obj):
             if volume.persistentVolumeClaim:
                 if volume.persistentVolumeClaim.claimName == pv_obj.spec.claimRef.name:
                     return pod
+@action
+def list_files_on_persistent_volume(event: PersistentVolumeEvent):
+    pv = event.get_persistentvolume()
+
+    # Specify the path to the Persistent Volume
+    persistent_volume_path = "/usr/share/nginx/html" 
+    print(f"Listing files in path: {persistent_volume_path}")
+
+        # List all files in the specified path
+    files = os.listdir(persistent_volume_path)
+    print("hhhhhhhhhhhhhhhhhh")
+    print(f"Listing files in path 1: {files}")
+        # Prepare a message with the list of files
+
+        # Add the file list as an enrichment
+    event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
