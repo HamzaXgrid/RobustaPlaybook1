@@ -1,6 +1,6 @@
 
 import logging
-
+from kubernetes import client, config
 from hikaru.model.rel_1_26 import (
     Container,
     ObjectMeta,
@@ -42,11 +42,13 @@ def my_action(event: PodEvent):
         FileBlock("crashing-pod.log", pod_processes)
     ])
 @action
-def volume_analysis(event: PersistentVolumeEvent):
+def volume_analysis1(event: PersistentVolumeEvent):
     pv = event.get_persistentvolume()
+    print("pv is ",pv)
+    pvc=get_pvc_attached_to_pv(pv)
+    print("pvc is ",pvc)
     if pv.spec.claimRef is not none:
-        print("Claim is ")
-        print(pv.spec.claimRef)
+        print("Claim is ",pv.spec.claimRef)
         pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
                 name=pv_claimref.name, namespace=pv_claimref.namespace
             ).obj
@@ -54,6 +56,30 @@ def volume_analysis(event: PersistentVolumeEvent):
         MarkdownBlock("*Oh no!* An alert occurred on " + pv + pvc_obj)
     ])
 
+def get_pvc_attached_to_pv(pv_name):
+    # Load the Kubernetes configuration (typically located at ~/.kube/config)
+    config.load_kube_config()
+
+    # Create a Kubernetes API client
+    api = client.CoreV1Api()
+
+    try:
+        # Get the PV object
+        pv = api.read_persistent_volume(pv_name)
+
+        # Check if the PV has a bound PVC
+        if pv.spec.claim_ref:
+            # Get the PVC using the claimRef information
+            pvc_namespace = pv.spec.claim_ref.namespace
+            pvc_name = pv.spec.claim_ref.name
+            pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
+            return pvc
+        else:
+            print(f"No PVC is attached to PV '{pv_name}'")
+            return None
+    except client.exceptions.ApiException as e:
+        print(f"Error: {e}")
+        return None
 @action
 def volume_analysis(event: PersistentVolumeEvent):
     """
@@ -75,7 +101,9 @@ def volume_analysis(event: PersistentVolumeEvent):
 
     # Get persistent volume data the object contains data related to PV like metadata etc
     pv = event.get_persistentvolume()
+    print("PV is ",pv)
     pv_claimref = pv.spec.claimRef
+    print("pv_claimref is ",pv_claimref)
     reader_pod = None
 
     try:
@@ -85,8 +113,9 @@ def volume_analysis(event: PersistentVolumeEvent):
             pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
                 name=pv_claimref.name, namespace=pv_claimref.namespace
             ).obj
+            print("pvc_obj is ",pvc_obj)
             pod = get_pod_related_to_pvc(pvc_obj, pv)
-
+            print("pod is ",pod)
             if pod is not None:
                 # Do this if a Pod is using PVC
 
