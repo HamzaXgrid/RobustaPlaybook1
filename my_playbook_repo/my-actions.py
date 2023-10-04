@@ -172,9 +172,113 @@ def volume_analysis(event: PersistentVolumeEvent):
 
     event.add_finding(finding)
 
+@action
+def volume_analysis2(event: PersistentVolumeEvent):
+    """
+    This action shows you the files present on your persistent volume
+    """
+    function_name = "volume_analysis2"
+    # https://docs.robusta.dev/master/extending/actions/findings-api.html
+    finding = Finding(
+        title="Persistent Volume content",
+        source=FindingSource.MANUAL,
+        aggregation_key=function_name,
+        finding_type=FindingType.REPORT,
+        failure=False,
+    )
 
+    if not event.get_persistentvolume():
+        logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
+        return
+
+    # Get persistent volume data the object contains data related to PV like metadata etc
+    pv = event.get_persistentvolume()
+    #print("PV is ",pv)
+    pv_claimref = pv.spec.claimRef
+    #print("pv_claimref is ",pv_claimref)
+    reader_pod = None
+
+    try:
+
+        if pv_claimref is not None:
+            # Do this if there is a PVC attached to PV
+            pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
+                name=pv_claimref.name, namespace=pv_claimref.namespace
+            ).obj
+            #print("pvc_obj is ",pvc_obj)
+            pod = get_pod_related_to_pvc(pvc_obj, pv)
+            #print("pod is ",pod)
+            if pod is not None:
+                # Do this if a Pod is using PVC
+
+                volume_mount_name = None
+
+                # Find name of the mounted volume on pod
+                for volume in pod.spec.volumes:
+                    if volume.persistentVolumeClaim.claimName == pv_claimref.name:
+                        volume_mount_name = volume.name
+                        break
+
+                # Use name of the mounted volume to find the correct volume mount
+                container_found_flag = False
+                container_volume_mount = None
+                for container in pod.spec.containers:
+                    if container_found_flag:
+                        break
+                    for volume_mount in container.volumeMounts:
+                        if volume_mount_name == volume_mount.name:
+                            container_volume_mount = volume_mount
+                            container_found_flag = True
+                            break
+                #print("DATA is")
+                #print(container_volume_mount.mountPath)
+                result = pod.exec(f"ls -R {container_volume_mount.mountPath}/")  # type: ignore
+                finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
+                finding.add_enrichment(
+                    [
+                        FileBlock("Data.txt: ", result.encode()),
+                    ]
+                )
+
+            else:
+                # Do this if no Pod is attached to PVC
+                reader_pod = persistent_volume_reader(persistent_volume=pv)
+                result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
+                finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
+                finding.add_enrichment(
+                    [
+                        FileBlock("Data.txt: ", result.encode()),
+                    ]
+                )
+        else:
+            finding.add_enrichment(
+                [
+                    MarkdownBlock(f"Persistent volume named {pv.metadata.name} have no persistent volume claim."),
+                ]
+            )
+
+    finally:
+        # delete the reader pod
+        if reader_pod is not None:
+            reader_pod.delete()
+
+    event.add_finding(finding)
 # returns a pod that mounts the given persistent volume
-
+@action
+def volume_analysis3(event: PersistentVolumeEvent):
+    function_name = "volume_analysis3"
+    finding = Finding(
+        title="Persistent Volume content",
+        source=FindingSource.MANUAL,
+        aggregation_key=function_name,
+        finding_type=FindingType.REPORT,
+        failure=False,
+    )
+    persistent_Volume=event.get_persistentvolume()
+    print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
+    #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
+    finding.title = f"Files present on persistent volume {persistent_Volume.metadata.name} are: "
+    finding.add_enrichment([FileBlock("Data.txt: ", function_name),])
 
 def persistent_volume_reader(persistent_volume):
     reader_pod_spec = RobustaPod(
@@ -242,18 +346,3 @@ def list_files_on_persistent_volume(event: PersistentVolumeEvent):
     event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
 
 
-@action
-def volume_analysis2(event: PersistentVolumeEvent):
-    persistent_Volume=event.get_persistentvolume()
-    print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
-    function_name = "volume_analysis2"
-    finding = Finding(
-        title="Persistent Volume content",
-        source=FindingSource.MANUAL,
-        aggregation_key=function_name,
-        finding_type=FindingType.REPORT,
-        failure=False,
-    )
-    #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
-    finding.title = f"Files present on persistent volume {persistent_Volume.metadata.name} are: "
-    finding.add_enrichment([FileBlock("Data.txt: ", function_name),])
