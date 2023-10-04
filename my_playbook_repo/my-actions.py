@@ -178,15 +178,15 @@ def volume_analysis3(event: PersistentVolumeEvent):
     persistent_Volume=event.get_persistentvolume()
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
     persistent_VolumeName=persistent_Volume.metadata.name
-    if persistent_Volume.spec.claim_ref is not None:
-        persistent_VolumeClaimName=persistent_Volume.spec.claim_ref.name
-        persistent_VolumeClaimNamSpace=persistent_Volume.spec.claim_ref.namespace
+    if persistent_Volume.spec..claimRef is not None:
+        persistent_VolumeClaimName=persistent_Volume.spec.claim.Ref.name
+        persistent_VolumeClaimNameSpace=persistent_Volume.spec.claim_Ref.namespace
     pv=persistent_Volume.metadata.name
     #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
     #finding.title = f"Files present on persistent volume {persistent_Volume.metadata.name} are: "
     #finding.add_enrichment([FileBlock("Data.txt: ", function_name),])
     event.add_enrichment([
-        MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNamSpace),
+        MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace),
         FileBlock("PV.log", pv)
     ])
 
