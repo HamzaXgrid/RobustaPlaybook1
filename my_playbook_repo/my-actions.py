@@ -198,7 +198,7 @@ def volume_analysis4(event: PersistentVolumeEvent):
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
     persistent_VolumeName=persistent_Volume.metadata.name
     if persistent_Volume.spec.claimRef is not None:
-        persistent_VolumeClaim=persistent_Volume.spec.claimRef.name
+        persistent_VolumeClaimName=persistent_Volume.spec.claimRef.name
         persistent_VolumeClaimNameSpace=persistent_Volume.spec.claimRef.namespace
     pv=persistent_Volume.metadata.name
     #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
