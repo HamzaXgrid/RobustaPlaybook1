@@ -246,4 +246,11 @@ def list_files_on_persistent_volume(event: PersistentVolumeEvent):
 def volume_analysis2(event: PersistentVolumeEvent):
     persistent_Volume=event.get_persistentvolume()
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
-    event.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
+    finding = Finding(
+        title="Persistent Volume content",
+        source=FindingSource.MANUAL,
+        aggregation_key="volume_analysis2",
+        finding_type=FindingType.REPORT,
+        failure=False,
+    )
+    finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
