@@ -113,7 +113,7 @@ def volume_analysis(event: PersistentVolumeEvent):
             pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
                 name=pv_claimref.name, namespace=pv_claimref.namespace
             ).obj
-            #print("pvc_obj is ",pvc_obj)
+            print("pvc_obj is ",pvc_obj)
             pod = get_pod_related_to_pvc(pvc_obj, pv)
             #print("pod is ",pod)
             if pod is not None:
@@ -201,12 +201,10 @@ def volume_analysis4(event: PersistentVolumeEvent):
         persistent_VolumeClaimName=persistent_Volume.spec.claimRef.name
         persistent_VolumeClaimNameSpace=persistent_Volume.spec.claimRef.namespace
     pv=persistent_Volume.metadata.name
-    #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
-    #finding.title = f"Files present on persistent volume {persistent_Volume.metadata.name} are: "
-    #finding.add_enrichment([FileBlock("Data.txt: ", function_name),])
+    list_of_Pods=PodList.listNamespacedPod(persistent_VolumeClaimNameSpace).obj
     event.add_enrichment([
         MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace),
-        FileBlock("PV.log", pv)
+        FileBlock("PV.log", list_of_Pods)
     ])
 
 def persistent_volume_reader(persistent_volume):
