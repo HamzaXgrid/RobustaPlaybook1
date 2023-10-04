@@ -240,3 +240,10 @@ def list_files_on_persistent_volume(event: PersistentVolumeEvent):
 
         # Add the file list as an enrichment
     event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
+
+
+@action
+def volume_analysis2(event: PersistentVolumeEvent):
+    persistent_Volume=event.get_persistentvolume()
+    print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
+    finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
