@@ -208,7 +208,7 @@ def volume_analysis4(event: PersistentVolumeEvent):
             if volume.persistentVolumeClaim:
                 if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName:
                     Pod = pod
-                    Print("Pod is ",Pod)
+                    print("Pod is ",Pod)
     event.add_enrichment([
         MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace),
         FileBlock("PV.log", pv)
