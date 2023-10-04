@@ -174,21 +174,14 @@ def volume_analysis(event: PersistentVolumeEvent):
 
 @action
 def volume_analysis2(event: PersistentVolumeEvent):
-    """
-    This action shows you the files present on your persistent volume
-    """
     function_name = "volume_analysis2"
-    # https://docs.robusta.dev/master/extending/actions/findings-api.html
     finding = Finding(
         title="Persistent Volume content",
         source=FindingSource.MANUAL,
-        aggregation_key=function_name,
+        aggregation_key="volume_analysis2",
         finding_type=FindingType.REPORT,
         failure=False,
     )
-
-
-    # Get persistent volume data the object contains data related to PV like metadata etc
     pv = event.get_persistentvolume()
     #print("PV is ",pv)
     pv_claimref = pv.spec.claimRef
@@ -271,14 +264,16 @@ def volume_analysis3(event: PersistentVolumeEvent):
         finding_type=FindingType.REPORT,
         failure=False,
     )
-    if not event.get_persistentvolume():
-        logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
-        return
     persistent_Volume=event.get_persistentvolume()
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
+    pv=persistent_Volume.metadata.name
     #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
-    finding.title = f"Files present on persistent volume {persistent_Volume.metadata.name} are: "
-    finding.add_enrichment([FileBlock("Data.txt: ", function_name),])
+    #finding.title = f"Files present on persistent volume {persistent_Volume.metadata.name} are: "
+    #finding.add_enrichment([FileBlock("Data.txt: ", function_name),])
+    event.add_enrichment([
+        MarkdownBlock("*Oh no!* An alert occurred on " + pv),
+        FileBlock("PV.log", pv)
+    ])
 
 def persistent_volume_reader(persistent_volume):
     reader_pod_spec = RobustaPod(
