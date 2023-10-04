@@ -57,13 +57,13 @@ def volume_analysis1(event: PersistentVolumeEvent):
     ])
 
 def get_pvc_attached_to_pv(pv_name):
-    # Load the Kubernetes configuration (typically located at ~/.kube/config)
-    config.load_kube_config()
-
-    # Create a Kubernetes API client
-    api = client.CoreV1Api()
-
     try:
+        # Load the Kubernetes configuration (typically located at ~/.kube/config)
+        config.load_kube_config()
+
+        # Create a Kubernetes API client
+        api = client.CoreV1Api()
+
         # Get the PV object
         pv = api.read_persistent_volume(pv_name)
 
@@ -77,6 +77,9 @@ def get_pvc_attached_to_pv(pv_name):
         else:
             print(f"No PVC is attached to PV '{pv_name}'")
             return None
+    except client.exceptions.ApiException as e:
+        print(f"Error: {e}")
+        return None
     except client.exceptions.ApiException as e:
         print(f"Error: {e}")
         return None
