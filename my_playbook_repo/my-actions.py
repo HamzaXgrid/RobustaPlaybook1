@@ -203,7 +203,7 @@ def volume_analysis4(event: PersistentVolumeEvent):
     pv=persistent_Volume.metadata.name
     list_of_Pods=PodList.listNamespacedPod(persistent_VolumeClaimNameSpace).obj
     #print("Pods ARE ",list_of_Pods)
-    for pod in pod_list.items:
+    for pod in list_of_Pods.items:
         for volume in pod.spec.volumes:
             if volume.persistentVolumeClaim:
                 if volume.persistentVolumeClaim.claimName == pv_obj.spec.claimRef.name:
