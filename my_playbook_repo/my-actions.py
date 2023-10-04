@@ -187,9 +187,6 @@ def volume_analysis2(event: PersistentVolumeEvent):
         failure=False,
     )
 
-    if not event.get_persistentvolume():
-        logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
-        return
 
     # Get persistent volume data the object contains data related to PV like metadata etc
     pv = event.get_persistentvolume()
@@ -274,6 +271,9 @@ def volume_analysis3(event: PersistentVolumeEvent):
         finding_type=FindingType.REPORT,
         failure=False,
     )
+    if not event.get_persistentvolume():
+        logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
+        return
     persistent_Volume=event.get_persistentvolume()
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
     #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
