@@ -60,8 +60,10 @@ def get_pvc_attached_to_pv(pv_name):
     try:
         # Load the Kubernetes configuration (typically located at ~/.kube/config)
     
-        kubeconfig_path = "/root/.kube/config"
-        config.load_kube_config(config_file=kubeconfig_path)
+        os.environ['KUBECONFIG'] = '/root/.kube/config'
+
+# Load the Kubernetes configuration
+        config.load_kube_config()
         # Create a Kubernetes API client
         api = client.CoreV1Api()
 
