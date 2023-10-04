@@ -171,14 +171,33 @@ def volume_analysis(event: PersistentVolumeEvent):
             reader_pod.delete()
 
     event.add_finding(finding)
-
-
 @action
 def volume_analysis3(event: PersistentVolumeEvent):
+    function_name = "volume_analysis3"
+    finding = Finding(
+        title="Persistent Volume content",
+        source=FindingSource.MANUAL,
+        aggregation_key=function_name,
+        finding_type=FindingType.REPORT,
+        failure=False,
+    )
+    persistent_Volume=event.get_persistentvolume()
+    print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
+    pv=persistent_Volume.metadata.name
+    #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
+    #finding.title = f"Files present on persistent volume {persistent_Volume.metadata.name} are: "
+    #finding.add_enrichment([FileBlock("Data.txt: ", function_name),])
+    event.add_enrichment([
+        MarkdownBlock("*Oh no!* An alert occurred on " + pv),
+        FileBlock("PV.log", pv)
+    ])
+
+@action
+def volume_analysis4(event: PersistentVolumeEvent):
     persistent_Volume=event.get_persistentvolume()
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
     persistent_VolumeName=persistent_Volume.metadata.name
-    if persistent_Volume.spec..claimRef is not None:
+    if persistent_Volume.spec.claimRef is not None:
         persistent_VolumeClaimName=persistent_Volume.spec.claim.Ref.name
         persistent_VolumeClaimNameSpace=persistent_Volume.spec.claim_Ref.namespace
     pv=persistent_Volume.metadata.name
