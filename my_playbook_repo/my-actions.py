@@ -206,7 +206,7 @@ def volume_analysis4(event: PersistentVolumeEvent):
     for pod in list_of_Pods.items:
         for volume in pod.spec.volumes:
             if volume.persistentVolumeClaim:
-                if volume.persistentVolumeClaim.claimName == pv_obj.spec.claimRef.name:
+                if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName:
                     Pod = pod
                     Print("Pod is ",Pod)
     event.add_enrichment([
