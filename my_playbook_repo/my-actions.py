@@ -66,22 +66,18 @@ def volume_analysis6(event: PersistentVolumeEvent):
             #break
     
     #List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f")
-            try:
-                cmd = ["find", f"{new_podMountPath}/", "-type", "f"]
-                resp = api.connect_get_namespaced_pod_exec(
-                    Pod.metadata.name,
-                    Pod.metadata.namespace,
-                    command=cmd,
-                    stderr=True,
-                    stdin=False,
-                    stdout=True,
-                    tty=False,
-                    upgrade=True,
-                )
-                List_of_Files = resp.output
-            except client.rest.ApiException as e:
-                print(f"Error executing command: {e}")
-                List_of_Files = f"Error executing command: {e}" 
+    if Pod:
+        try:
+            cmd = ["kubectl", "exec", Pod.metadata.name, "--namespace", Pod.metadata.namespace, "--", "find", f"{new_podMountPath}/", "-type", "f"]
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+            if process.returncode == 0:
+                List_of_Files = stdout.decode("utf-8")
+            else:
+                List_of_Files = f"Error executing command: {stderr.decode('utf-8')}"
+        except Exception as e:
+            print(f"Error executing command: {e}")
+            List_of_Files = f"Error executing command: {e}" 
     event.add_enrichment([
         MarkdownBlock("The Name of The PV is " + mountedVolumeName),
         FileBlock("FilesList.log", List_of_Files)
