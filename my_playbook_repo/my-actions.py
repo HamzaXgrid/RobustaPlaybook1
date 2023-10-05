@@ -178,26 +178,22 @@ def volume_analysis4(event: PersistentVolumeEvent):
     persistent_Volume=event.get_persistentvolume()
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
     persistent_VolumeName=persistent_Volume.metadata.name
-    if persistent_Volume.spec.claimRef is not None:
+    if persistent_Volume.spec.claimRef is not None: # This tells a volume is claimed by PVC
         persistent_VolumeClaimName=persistent_Volume.spec.claimRef.name
         persistent_VolumeClaimNameSpace=persistent_Volume.spec.claimRef.namespace
-    pv=persistent_Volume.metadata.name
-    list_of_Pods=PodList.listNamespacedPod(persistent_VolumeClaimNameSpace).obj
-    #print("Pods ARE ",list_of_Pods)
-    for pod in list_of_Pods.items:
-        for volume in pod.spec.volumes:
-            if volume.persistentVolumeClaim:
-                if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName:
-                    mountedVolumeName=volume.name #Get the name of the Volume
-                    Pod = pod # Gets the POD with PVC
-                    print("Pod is ",Pod)
-                    for containers in pod.spec.containers:
-                        print("-----------------------------")
-                        for volumePath in containers.volumeMounts:
-                            print("-----------------------------")
-                            if mountedVolumeName == volumePath.name:
-                                podMountPath=volumePath.mountPath
-                    print("MountPath is ",podMountPath)
+        #pv=persistent_Volume.metadata.name
+        list_of_Pods=PodList.listNamespacedPod(persistent_VolumeClaimNameSpace).obj
+        #print("Pods ARE ",list_of_Pods)
+        for pod in list_of_Pods.items: # Iterates over a list of Pods in a namespace
+            for volume in pod.spec.volumes: # Iterates over the volume in each Pod to get the pod with a claim name
+                if volume.persistentVolumeClaim:
+                    if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName: # Checks for the claim name
+                        mountedVolumeName=volume.name # Get the name of the Volume
+                        Pod = pod # Gets the POD with PVC
+                        for containers in pod.spec.containers:# Iterates over the conatiners
+                            for volumePath in containers.volumeMounts: # Iterates over the Volumes mounted on each container
+                                if mountedVolumeName == volumePath.name:
+                                    podMountPath=volumePath.mountPath # We have a volume Path
                 
             
     event.add_enrichment([
