@@ -55,10 +55,11 @@ def volume_analysis6(event: PersistentVolumeEvent):
     
     print(Pod)
     for volume in Pod.spec.volumes:
-        if volume.persistentVolumeClaim:
-            if volume.persistentVolumeClaim.claimName == PVC_Name:
-                mountedVolumeName=volume.name
-                print(mountedVolumeName)
+        #if volume.persistentVolumeClaim:
+         #   if volume.persistentVolumeClaim.claimName == PVC_Name:
+          #      mountedVolumeName=volume.name
+            #    print(mountedVolumeName)
+        print("Volumes========================",volume)
     for containers in Pod.spec.containers:
         if containers.volumeMounts.name == mountedVolumeName:
             podMountPath=containers.volumeMounts.mountPath # We have a volume Path
