@@ -43,15 +43,16 @@ def my_action(event: PodEvent):
     ])
 @action
 def volume_analysis6(event: PersistentVolumeEvent):
-    pv = event.get_persistentvolume()
+    Persistent_Volume = event.get_persistentvolume()
     api = client.CoreV1Api()
-    pv_name=pv.metadata.name
-    print(api)
-    print(pv_name)
-    p_v = api.read_persistent_volume(pv_name)
-    print(p_v)
+    Persistent_Volume_Name=Persistent_Volume.metadata.name
+    Persistent_Volume_Details = api.read_persistent_volume(Persistent_Volume_Name)
+    PVC_Name=Persistent_Volume_Details.spec.claim_ref.name
+    PVC_NameSpace=Persistent_Volume_Details.spec.claim_ref.namespace
+    print(PVC_Name)
+    print(PVC_NameSpace)
     event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on ", pv )
+        MarkdownBlock("*Oh no!* An alert occurred on ", Persistent_Volume )
     ])
 @action
 def volume_analysis1(event: PersistentVolumeEvent):
