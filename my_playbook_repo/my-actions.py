@@ -52,9 +52,19 @@ def volume_analysis6(event: PersistentVolumeEvent):
     print(PVC_Name)
     print(PVC_NameSpace)
     Pod=get_pod_attached_to_pvc(api,PVC_Name,PVC_NameSpace)
-    Files=list_files_on_pv(api,Persistent_Volume_Name)
+    
     print(Pod)
-    print(Files)
+    for volume in Pod.spec.volumes:
+        if volume.persistentVolumeClaim:
+            if volume.persistentVolumeClaim.claimName == PVC_Name:
+                mountedVolumeName=volume.name
+                print(mountedVolumeName)
+    for containers in Pod.spec.containers:
+        if containers.volumeMounts.name == mountedVolumeName:
+            podMountPath=containers.volumeMounts.mountPath # We have a volume Path
+            new_podMountPath=podMountPath[1:]
+            print("New path ",new_podMountPath)
+            break     
     event.add_enrichment([
         MarkdownBlock("*Oh no!* An alert occurred on ", Persistent_Volume )
     ])
@@ -70,56 +80,51 @@ def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     except client.exceptions.ApiException as e:
         print(f"Error: {e}")
     return None
-def list_files_on_pv(api, pv_name):
-    try:
-        pv = api.read_persistent_volume(pv_name)
-        if pv.spec.host_path:
-            host_path = pv.spec.host_path.path
-            # Use any suitable method to list files on the host path, e.g., 'os.listdir' or 'os.walk'
-            files = os.listdir(host_path)
-            file_list = "\n".join(files)
-            return file_list
-    except client.exceptions.ApiException as e:
-        print(f"Error: {e}")
-    return "Unable to list files on PV"
+
 
 @action
-def volume_analysis1(event: PersistentVolumeEvent):
-    pv = event.get_persistentvolume()
-    print("pv is ",pv)
-    pvc=get_pvc_attached_to_pv(pv)
-    print("pvc is ",pvc)
-    if pv.spec.claimRef is not none:
-        print("Claim is ",pv.spec.claimRef)
-        pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
-                name=pv_claimref.name, namespace=pv_claimref.namespace
-            ).obj
-    event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on " + pv + pvc_obj)
-    ])
+def volume_analysis4(event: PersistentVolumeEvent):
+    persistent_Volume=event.get_persistentvolume()
+    print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
+    persistent_VolumeName=persistent_Volume.metadata.name
+    if persistent_Volume.spec.claimRef is not None: # This tells a volume is claimed by PVC
+        persistent_VolumeClaimName=persistent_Volume.spec.claimRef.name
+        persistent_VolumeClaimNameSpace=persistent_Volume.spec.claimRef.namespace
+        #pv=persistent_Volume.metadata.name
+        list_of_Pods=PodList.listNamespacedPod(persistent_VolumeClaimNameSpace).obj
+        #print("Pods ARE ",list_of_Pods)
+        for pod in list_of_Pods.items: # Iterates over a list of Pods in a namespace
+            for volume in pod.spec.volumes: # Iterates over the volume in each Pod to get the pod with a claim name
+                if volume.persistentVolumeClaim:
+                    if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName: # Checks for the claim name
+                        mountedVolumeName=volume.name # Get the name of the Volume
+                        Pod = pod # Gets the POD with PVC
+                        for containers in pod.spec.containers:# Iterates over the conatiners
+                            for volumePath in containers.volumeMounts: # Iterates over the Volumes mounted on each container
+                                if mountedVolumeName == volumePath.name:
+                                    podMountPath=volumePath.mountPath # We have a volume Path
+                                    new_podMountPath=podMountPath[1:]
+                                    print("New path ",new_podMountPath)
+                                    break 
+        List_of_Files = pod.exec(f"find {new_podMountPath}/ -type f") 
+            
+        event.add_enrichment([
+            MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace + mountedVolumeName),
+            FileBlock("FilesList.log", List_of_Files)
+        ])
+    else:
+        event.add_enrichment([
+            MarkdownBlock("No PVC is attached to the PV named " + persistent_VolumeName)
+        ])
 
-def get_pvc_attached_to_pv(pv_name):
-    try:
 
-        api = client.CoreV1Api()
-        pv = api.read_persistent_volume(pv_name.metadata.name)
 
-        # Check if the PV has a bound PVC
-        if pv.spec.claim_ref:
-            # Get the PVC using the claimRef information
-            pvc_namespace = pv.spec.claim_ref.namespace
-            pvc_name = pv.spec.claim_ref.name
-            pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
-            return pvc
-        else:
-            print(f"No PVC is attached to PV '{pv_name}'")
-            return None
-    except client.exceptions.ApiException as e:
-        print(f"Error: {e}")
-        return None
-    except client.exceptions.ApiException as e:
-        print(f"Error: {e}")
-        return None
+
+
+
+
+
+
 @action
 def volume_analysis(event: PersistentVolumeEvent):
     """
@@ -213,40 +218,7 @@ def volume_analysis(event: PersistentVolumeEvent):
     event.add_finding(finding)
 
 
-@action
-def volume_analysis4(event: PersistentVolumeEvent):
-    persistent_Volume=event.get_persistentvolume()
-    print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
-    persistent_VolumeName=persistent_Volume.metadata.name
-    if persistent_Volume.spec.claimRef is not None: # This tells a volume is claimed by PVC
-        persistent_VolumeClaimName=persistent_Volume.spec.claimRef.name
-        persistent_VolumeClaimNameSpace=persistent_Volume.spec.claimRef.namespace
-        #pv=persistent_Volume.metadata.name
-        list_of_Pods=PodList.listNamespacedPod(persistent_VolumeClaimNameSpace).obj
-        #print("Pods ARE ",list_of_Pods)
-        for pod in list_of_Pods.items: # Iterates over a list of Pods in a namespace
-            for volume in pod.spec.volumes: # Iterates over the volume in each Pod to get the pod with a claim name
-                if volume.persistentVolumeClaim:
-                    if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName: # Checks for the claim name
-                        mountedVolumeName=volume.name # Get the name of the Volume
-                        Pod = pod # Gets the POD with PVC
-                        for containers in pod.spec.containers:# Iterates over the conatiners
-                            for volumePath in containers.volumeMounts: # Iterates over the Volumes mounted on each container
-                                if mountedVolumeName == volumePath.name:
-                                    podMountPath=volumePath.mountPath # We have a volume Path
-                                    new_podMountPath=podMountPath[1:]
-                                    print("New path ",new_podMountPath)
-                                    break 
-        List_of_Files = pod.exec(f"find {new_podMountPath}/ -type f") 
-            
-        event.add_enrichment([
-            MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace + mountedVolumeName),
-            FileBlock("FilesList.log", List_of_Files)
-        ])
-    else:
-        event.add_enrichment([
-            MarkdownBlock("No PVC is attached to the PV named " + persistent_VolumeName)
-        ])
+
 def persistent_volume_reader(persistent_volume):
     reader_pod_spec = RobustaPod(
         apiVersion="v1",
