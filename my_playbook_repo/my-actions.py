@@ -42,7 +42,7 @@ def my_action(event: PodEvent):
         FileBlock("crashing-pod.log", pod_processes)
     ])
 @action
-def volume_analysis1(event: PersistentVolumeEvent):
+def volume_analysis6(event: PersistentVolumeEvent):
     pv = event.get_persistentvolume()
     api = client.CoreV1Api()
     print(api)
