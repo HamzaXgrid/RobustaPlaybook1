@@ -53,22 +53,21 @@ def volume_analysis6(event: PersistentVolumeEvent):
     print(PVC_NameSpace)
     Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
 
-    print(Pod)
+    #print(Pod)
     mountedVolumeName = None  # Initialize the variable
     for volume in Pod.spec.volumes:
         if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
             mountedVolumeName = volume.name
-            print(mountedVolumeName)
-        print("Volumes========================", volume)
     for containers in Pod.spec.containers:
-        print("Containers========================", containers)
         if containers.volume_mounts[0].name == mountedVolumeName:
             podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
             new_podMountPath = podMountPath[1:]
             print("New path ", new_podMountPath)
             break
+    
+    List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f") 
     event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on ", Persistent_Volume)
+        MarkdownBlock("*Oh no!* An alert occurred on ", List_of_Files)
     ])
 def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     try:
