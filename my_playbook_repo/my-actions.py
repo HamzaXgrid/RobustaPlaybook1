@@ -51,9 +51,23 @@ def volume_analysis6(event: PersistentVolumeEvent):
     PVC_NameSpace=Persistent_Volume_Details.spec.claim_ref.namespace
     print(PVC_Name)
     print(PVC_NameSpace)
+    Pod=get_pod_attached_to_pvc(api,PVC_Name,PVC_NameSpace)
+    print(Pod)
     event.add_enrichment([
         MarkdownBlock("*Oh no!* An alert occurred on ", Persistent_Volume )
     ])
+def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
+    try:
+        pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
+        if pvc.spec.volume_name:
+            pod_list = api.list_namespaced_pod(pvc_namespace)
+            for pod in pod_list.items:
+                for volume in pod.spec.volumes:
+                    if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == pvc_name:
+                        return pod
+    except client.exceptions.ApiException as e:
+        print(f"Error: {e}")
+    return None
 @action
 def volume_analysis1(event: PersistentVolumeEvent):
     pv = event.get_persistentvolume()
