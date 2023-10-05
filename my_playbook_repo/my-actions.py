@@ -194,8 +194,8 @@ def volume_analysis4(event: PersistentVolumeEvent):
                 
             
     event.add_enrichment([
-        MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace),
-        FileBlock("PV.log", volume.name)
+        MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace + mountedVolumeName),
+        FileBlock("PV.log", mountedVolumeName)
     ])
 
 def persistent_volume_reader(persistent_volume):
