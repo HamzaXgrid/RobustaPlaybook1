@@ -45,7 +45,11 @@ def my_action(event: PodEvent):
 def volume_analysis6(event: PersistentVolumeEvent):
     pv = event.get_persistentvolume()
     api = client.CoreV1Api()
+    pv_name=pv.metadata.name
     print(api)
+    print(pv_name)
+    p_v = api.read_persistent_volume(pv_name)
+    print(p_v)
     event.add_enrichment([
         MarkdownBlock("*Oh no!* An alert occurred on ", pv )
     ])
