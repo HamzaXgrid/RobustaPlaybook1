@@ -67,8 +67,9 @@ def volume_analysis6(event: PersistentVolumeEvent):
     
     List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f") 
     event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on ", List_of_Files)
-    ])
+        MarkdownBlock("The Name of The PV is " + mountedVolumeName),
+        FileBlock("FilesList.log", List_of_Files)
+        ])
 def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     try:
         pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
