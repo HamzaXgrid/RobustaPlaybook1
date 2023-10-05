@@ -44,6 +44,14 @@ def my_action(event: PodEvent):
 @action
 def volume_analysis1(event: PersistentVolumeEvent):
     pv = event.get_persistentvolume()
+    api = client.CoreV1Api()
+    print(api)
+    event.add_enrichment([
+        MarkdownBlock("*Oh no!* An alert occurred on " + pv )
+    ])
+@action
+def volume_analysis1(event: PersistentVolumeEvent):
+    pv = event.get_persistentvolume()
     print("pv is ",pv)
     pvc=get_pvc_attached_to_pv(pv)
     print("pvc is ",pvc)
@@ -58,9 +66,7 @@ def volume_analysis1(event: PersistentVolumeEvent):
 
 def get_pvc_attached_to_pv(pv_name):
     try:
-    
-        os.environ['KUBECONFIG'] = '/root/.kube/config'
-        config.load_kube_config()
+
         api = client.CoreV1Api()
         pv = api.read_persistent_volume(pv_name.metadata.name)
 
