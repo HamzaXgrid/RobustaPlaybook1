@@ -194,8 +194,10 @@ def volume_analysis4(event: PersistentVolumeEvent):
                             for volumePath in containers.volumeMounts: # Iterates over the Volumes mounted on each container
                                 if mountedVolumeName == volumePath.name:
                                     podMountPath=volumePath.mountPath # We have a volume Path
+                                    new_podMountPath=podMountPath[1:]
+                                    print("New path ",new_podMountPath)
                                     break 
-        result = pod.exec(f"ls -R {podMountPath}/") 
+        result = pod.exec(f"ls -R {new_podMountPath}") 
             
     event.add_enrichment([
         MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace + mountedVolumeName),
