@@ -52,7 +52,9 @@ def volume_analysis6(event: PersistentVolumeEvent):
     print(PVC_Name)
     print(PVC_NameSpace)
     Pod=get_pod_attached_to_pvc(api,PVC_Name,PVC_NameSpace)
+    Files=list_files_on_pv(api,Persistent_Volume_Name)
     print(Pod)
+    print(Files)
     event.add_enrichment([
         MarkdownBlock("*Oh no!* An alert occurred on ", Persistent_Volume )
     ])
@@ -68,6 +70,19 @@ def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     except client.exceptions.ApiException as e:
         print(f"Error: {e}")
     return None
+def list_files_on_pv(api, pv_name):
+    try:
+        pv = api.read_persistent_volume(pv_name)
+        if pv.spec.host_path:
+            host_path = pv.spec.host_path.path
+            # Use any suitable method to list files on the host path, e.g., 'os.listdir' or 'os.walk'
+            files = os.listdir(host_path)
+            file_list = "\n".join(files)
+            return file_list
+    except client.exceptions.ApiException as e:
+        print(f"Error: {e}")
+    return "Unable to list files on PV"
+
 @action
 def volume_analysis1(event: PersistentVolumeEvent):
     pv = event.get_persistentvolume()
