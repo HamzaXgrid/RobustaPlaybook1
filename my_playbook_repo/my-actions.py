@@ -49,32 +49,35 @@ def volume_analysis6(event: PersistentVolumeEvent):
     Persistent_Volume_Details = api.read_persistent_volume(Persistent_Volume_Name)
     print("PV",Persistent_Volume_Details)
     if Persistent_Volume_Details.spec.claim_ref is not None:
-        print("---------------------------------------------Not None--")
-    else:
-        print("==========================================None======")
-    PVC_Name = Persistent_Volume_Details.spec.claim_ref.name
-    PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
-    print(PVC_Name)
-    print(PVC_NameSpace)
-    Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
+        PVC_Name = Persistent_Volume_Details.spec.claim_ref.name
+        PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
+        print(PVC_Name)
+        print(PVC_NameSpace)
+        Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
 
-    #print(Pod)
-    mountedVolumeName = None  # Initialize the variable
-    for volume in Pod.spec.volumes:
-        if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
-            mountedVolumeName = volume.name
-    for containers in Pod.spec.containers:
-        if containers.volume_mounts[0].name == mountedVolumeName:
-            podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
-            new_podMountPath = podMountPath[1:]
-            print("New path ", new_podMountPath)
-            #break
-    
-    #List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f")
-    event.add_enrichment([
-        MarkdownBlock("The Name of The PV is " + mountedVolumeName),
-        FileBlock("FilesList.log", new_podMountPath)
+        #print(Pod)
+        mountedVolumeName = None  # Initialize the variable
+        for volume in Pod.spec.volumes:
+            if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
+                mountedVolumeName = volume.name
+        for containers in Pod.spec.containers:
+            if containers.volume_mounts[0].name == mountedVolumeName:
+                podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
+                new_podMountPath = podMountPath[1:]
+                print("New path ", new_podMountPath)
+                #break
+        
+        #List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f")
+        event.add_enrichment([
+            MarkdownBlock("The Name of The PV is " + mountedVolumeName),
+            FileBlock("FilesList.log", new_podMountPath)
         ])
+    else:
+        event.add_enrichment([
+            MarkdownBlock("No PVC is attached to the PV named " + Persistent_Volume_Name)
+        ])
+
+
 def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     try:
         pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
