@@ -45,30 +45,30 @@ def my_action(event: PodEvent):
 def volume_analysis6(event: PersistentVolumeEvent):
     Persistent_Volume = event.get_persistentvolume()
     api = client.CoreV1Api()
-    Persistent_Volume_Name=Persistent_Volume.metadata.name
+    Persistent_Volume_Name = Persistent_Volume.metadata.name
     Persistent_Volume_Details = api.read_persistent_volume(Persistent_Volume_Name)
-    PVC_Name=Persistent_Volume_Details.spec.claim_ref.name
-    PVC_NameSpace=Persistent_Volume_Details.spec.claim_ref.namespace
+    PVC_Name = Persistent_Volume_Details.spec.claim_ref.name
+    PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
     print(PVC_Name)
     print(PVC_NameSpace)
-    Pod=get_pod_attached_to_pvc(api,PVC_Name,PVC_NameSpace)
-    
+    Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
+
     print(Pod)
+    mountedVolumeName = None  # Initialize the variable
     for volume in Pod.spec.volumes:
-        #if volume.persistentVolumeClaim:
-        if volume.persistent_volume_claim.claim_name == PVC_Name:
-            mountedVolumeName=volume.name
+        if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
+            mountedVolumeName = volume.name
             print(mountedVolumeName)
-        print("Volumes========================",volume)
+        print("Volumes========================", volume)
     for containers in Pod.spec.containers:
-        print("Containers========================",containers)
-        if containers.volume_mounts.name == mountedVolumeName:
-            podMountPath=containers.volume_mounts.mount_path # We have a volume Path
-            new_podMountPath=podMountPath[1:]
-            print("New path ",new_podMountPath)
-            break     
+        print("Containers========================", containers)
+        if containers.volume_mounts[0].name == mountedVolumeName:
+            podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
+            new_podMountPath = podMountPath[1:]
+            print("New path ", new_podMountPath)
+            break
     event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on ", Persistent_Volume )
+        MarkdownBlock("*Oh no!* An alert occurred on ", Persistent_Volume)
     ])
 def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     try:
