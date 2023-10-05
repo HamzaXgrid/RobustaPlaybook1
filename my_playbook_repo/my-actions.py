@@ -47,7 +47,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
     api = client.CoreV1Api()
     print(api)
     event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on " + pv )
+        MarkdownBlock("*Oh no!* An alert occurred on ", pv )
     ])
 @action
 def volume_analysis1(event: PersistentVolumeEvent):
