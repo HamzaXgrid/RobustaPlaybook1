@@ -65,27 +65,27 @@ def volume_analysis6(event: PersistentVolumeEvent):
             print("New path ", new_podMountPath)
             #break
     
-    if Pod:
-        try:
-            cmd = ["find", f"{new_podMountPath}/", "-type", "f"]
-            resp = api.connect_get_namespaced_pod_exec(
-                Pod.metadata.name,
-                Pod.metadata.namespace,
-                command=cmd,
-                stderr=True,
-                stdin=False,
-                stdout=True,
-                tty=False,
-            )
-            List_of_Files = resp.output
-        except client.rest.ApiException as e:
-            print(f"Error executing command: {e}")
-            List_of_Files = f"Error executing command: {e}"
-
+    #List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f")
+            try:
+                cmd = ["find", f"{new_podMountPath}/", "-type", "f"]
+                resp = api.connect_get_namespaced_pod_exec(
+                    Pod.metadata.name,
+                    Pod.metadata.namespace,
+                    command=cmd,
+                    stderr=True,
+                    stdin=False,
+                    stdout=True,
+                    tty=False,
+                    upgrade=True,
+                )
+                List_of_Files = resp.output
+            except client.rest.ApiException as e:
+                print(f"Error executing command: {e}")
+                List_of_Files = f"Error executing command: {e}" 
     event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on ", Persistent_Volume),
-        FileBlock("List_of_Files.txt", List_of_Files.encode())
-    ])
+        MarkdownBlock("The Name of The PV is " + mountedVolumeName),
+        FileBlock("FilesList.log", List_of_Files)
+        ])
 def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     try:
         pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
