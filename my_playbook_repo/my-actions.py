@@ -199,11 +199,14 @@ def volume_analysis4(event: PersistentVolumeEvent):
                                     break 
         result = pod.exec(f"find {new_podMountPath} -type f") 
             
-    event.add_enrichment([
-        MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace + mountedVolumeName),
-        FileBlock("PV.log", result)
-    ])
-
+        event.add_enrichment([
+            MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace + mountedVolumeName),
+            FileBlock("PV.log", result)
+        ])
+    else:
+        event.add_enrichment([
+            MarkdownBlock("No PVC is attached to the PV named " + persistent_VolumeName)
+        ])
 def persistent_volume_reader(persistent_volume):
     reader_pod_spec = RobustaPod(
         apiVersion="v1",
