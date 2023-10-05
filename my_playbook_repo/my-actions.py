@@ -171,26 +171,7 @@ def volume_analysis(event: PersistentVolumeEvent):
             reader_pod.delete()
 
     event.add_finding(finding)
-@action
-def volume_analysis3(event: PersistentVolumeEvent):
-    function_name = "volume_analysis3"
-    finding = Finding(
-        title="Persistent Volume content",
-        source=FindingSource.MANUAL,
-        aggregation_key=function_name,
-        finding_type=FindingType.REPORT,
-        failure=False,
-    )
-    persistent_Volume=event.get_persistentvolume()
-    print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
-    pv=persistent_Volume.metadata.name
-    #finding.add_enrichment(MarkdownBlock(f"Persistent volume named {persistent_Volume.metadata.name} "))
-    #finding.title = f"Files present on persistent volume {persistent_Volume.metadata.name} are: "
-    #finding.add_enrichment([FileBlock("Data.txt: ", function_name),])
-    event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on " + pv),
-        FileBlock("PV.log", pv)
-    ])
+
 
 @action
 def volume_analysis4(event: PersistentVolumeEvent):
@@ -207,11 +188,14 @@ def volume_analysis4(event: PersistentVolumeEvent):
         for volume in pod.spec.volumes:
             if volume.persistentVolumeClaim:
                 if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName:
+                    mountedVolumeName=volume.name
                     Pod = pod
                     print("Pod is ",Pod)
+                    for mounted_Volume in Pod
+            
     event.add_enrichment([
         MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace),
-        FileBlock("PV.log", pv)
+        FileBlock("PV.log", volume.name)
     ])
 
 def persistent_volume_reader(persistent_volume):
