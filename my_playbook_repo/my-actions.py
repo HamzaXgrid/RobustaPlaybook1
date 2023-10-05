@@ -188,14 +188,18 @@ def volume_analysis4(event: PersistentVolumeEvent):
         for volume in pod.spec.volumes:
             if volume.persistentVolumeClaim:
                 if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName:
-                    mountedVolumeName=volume.name #Got the name of the Volume
-                    Pod = pod
+                    mountedVolumeName=volume.name #Get the name of the Volume
+                    Pod = pod # Gets the POD with PVC
+                    for containers in pod.spec.containers:
+                        if mountedVolumeName == containers.volumeMounts.name:
+                            podMountPath=containers.volumeMounts.mountPath
                     print("Pod is ",Pod)
+                    print("MountPath is ",podMountPath)
                 
             
     event.add_enrichment([
         MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace + mountedVolumeName),
-        FileBlock("PV.log", mountedVolumeName)
+        FileBlock("PV.log", podMountPath)
     ])
 
 def persistent_volume_reader(persistent_volume):
