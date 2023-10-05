@@ -47,6 +47,11 @@ def volume_analysis6(event: PersistentVolumeEvent):
     api = client.CoreV1Api()
     Persistent_Volume_Name = Persistent_Volume.metadata.name
     Persistent_Volume_Details = api.read_persistent_volume(Persistent_Volume_Name)
+    print("PV",Persistent_Volume_Details)
+    if Persistent_Volume_Details.spec.claim_ref is not None:
+        print("---------------------------------------------Not None--")
+    else:
+        print("==========================================None======")
     PVC_Name = Persistent_Volume_Details.spec.claim_ref.name
     PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
     print(PVC_Name)
@@ -66,24 +71,9 @@ def volume_analysis6(event: PersistentVolumeEvent):
             #break
     
     #List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f")
-            try:
-                # Define the 'find' command as a list of arguments
-                cmd = ["find", f"{new_podMountPath}/", "-type", "f"]
-
-                # Execute the command and capture the output
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-
-                if result.returncode == 0:
-                    List_of_Files = result.stdout
-                else:
-                    print(f"Error executing command: {result.stderr}")
-                    List_of_Files = f"Error executing command: {result.stderr}"
-            except subprocess.CalledProcessError as e:
-                print(f"Error executing command: {e}")
-                List_of_Files = f"Error executing command: {e}"
     event.add_enrichment([
         MarkdownBlock("The Name of The PV is " + mountedVolumeName),
-        FileBlock("FilesList.log", List_of_Files)
+        FileBlock("FilesList.log", new_podMountPath)
         ])
 def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     try:
