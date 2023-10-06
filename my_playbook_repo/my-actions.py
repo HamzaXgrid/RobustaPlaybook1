@@ -76,7 +76,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
 
         try:
             # Execute the command inside the Pod
-            output = podR.exec_command(command)
+            output = podR.exec((f"find {new_podMountPath}/ -type f"))
 
             # Print the command output
             print("Command Output:")
@@ -121,6 +121,7 @@ def volume_analysis4(event: PersistentVolumeEvent):
                     if volume.persistentVolumeClaim.claimName == persistent_VolumeClaimName: # Checks for the claim name
                         mountedVolumeName=volume.name # Get the name of the Volume
                         Pod = pod # Gets the POD with PVC
+                        print(Pod)
                         for containers in pod.spec.containers:# Iterates over the conatiners
                             for volumePath in containers.volumeMounts: # Iterates over the Volumes mounted on each container
                                 if mountedVolumeName == volumePath.name:
