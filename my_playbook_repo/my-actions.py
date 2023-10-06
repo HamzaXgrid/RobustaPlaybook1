@@ -61,6 +61,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
             if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
                 mountedVolumeName = volume.name
         for containers in Pod.spec.containers:
+            #container_name=Pod.containers.name
             if containers.volume_mounts[0].name == mountedVolumeName:
                 podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
                 new_podMountPath = podMountPath[1:]
@@ -68,7 +69,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 #break
         pod_name=Pod.metadata.name
         namespace="default"
-        container_name=Pod.spec.containers.name
+        container_name="new-pv-container"
         command = ["/bin/bash", "-c", "ls -R"]
         try:
             # Execute the command in the Pod
