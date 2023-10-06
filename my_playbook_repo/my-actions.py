@@ -69,10 +69,8 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 #break
         namespace = "default"
         pod_name = "new-pv-pod"
-        podR = RobustaPod(pod_name, namespace)
+        podR = RobustaPod(pod_name, namespace).obj
         print(podR)
-        # Define the command to run inside the Pod
-        command = "ls -R"
 
         try:
             # Execute the command inside the Pod
@@ -84,6 +82,13 @@ def volume_analysis6(event: PersistentVolumeEvent):
 
         except Exception as e:
             print(f"Error executing command in Pod: {str(e)}")
+        POD1=get_pod_to_exec_Command(PVC_Name,pod_name)
+        output1 = podR.exec((f"find {new_podMountPath}/ -type f"))
+
+            # Print the command output
+        print("Command Output1:")
+        print(output1)
+
     else:
         event.add_enrichment([
             MarkdownBlock("No PVC is attached to the PV named " + Persistent_Volume_Name)
@@ -102,6 +107,14 @@ def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     except client.exceptions.ApiException as e:
         print(f"Error: {e}")
     return None
+def get_pod_to_exec_Command(pvc_obj,pod_name):
+    pod_list = PodList.listNamespacedPod(pvc_obj.metadata.namespace).obj
+    pod = None
+    for pod in pod_list.items:
+        if pod_name==pvc_obj.metadata.name:
+            return pod
+        else:
+            return None
 
 
 @action
