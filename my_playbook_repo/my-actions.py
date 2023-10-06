@@ -88,8 +88,11 @@ def volume_analysis6(event: PersistentVolumeEvent):
 
             # Print the command output
         print("Command Output1:")
-        print(List_of_Files)
-
+        #print(List_of_Files)
+        event.add_enrichment([
+            MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
+            FileBlock("FilesList.log", List_of_Files)
+        ])
     else:
         event.add_enrichment([
             MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
