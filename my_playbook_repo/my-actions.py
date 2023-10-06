@@ -69,19 +69,19 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 #break
         namespace = "default"
         pod_name = "new-pv-pod"
-        podR = RobustaPod(pod_name, namespace)
-        print(podR)
+        # podR = RobustaPod(pod_name, namespace)
+        # print(podR)
 
-        try:
-            # Execute the command inside the Pod
-            output = podR.exec((f"find {new_podMountPath}/ -type f"))
+        # try:
+        #     # Execute the command inside the Pod
+        #     output = podR.exec((f"find {new_podMountPath}/ -type f"))
 
-            # Print the command output
-            print("Command Output:")
-            print(output)
+        #     # Print the command output
+        #     print("Command Output:")
+        #     print(output)
 
-        except Exception as e:
-            print(f"Error executing command in Pod: {str(e)}")
+        # except Exception as e:
+        #     print(f"Error executing command in Pod: {str(e)}")
         POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
         output1 = POD1.exec((f"find {new_podMountPath}/ -type f"))
 
