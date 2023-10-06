@@ -84,15 +84,16 @@ def volume_analysis6(event: PersistentVolumeEvent):
         #     print(f"Error executing command in Pod: {str(e)}")
         POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
         print(POD1)
-        output1 = POD1.exec((f"find {new_podMountPath}/ -type f"))
+        List_of_Files = POD1.exec(f"find {new_podMountPath}/ -type f")
 
             # Print the command output
         print("Command Output1:")
-        print(output1)
+        print(List_of_Files)
 
     else:
         event.add_enrichment([
-            MarkdownBlock("No PVC is attached to the PV named " + Persistent_Volume_Name)
+            MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
+            FileBlock("FilesList.log", List_of_Files)
         ])
 
 
@@ -109,15 +110,12 @@ def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
         print(f"Error: {e}")
     return None
 def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
-    print("POD NAME SPACE",pod_namespace)
     pod_list = PodList.listNamespacedPod(pod_namespace).obj
     print("======================================9=====",pod_list)
     pod = None
     for pod in pod_list.items:
         if pod_name==pod.metadata.name:
-            print("IF")
             return pod
-    print("----------------")
     return pod
 
 
