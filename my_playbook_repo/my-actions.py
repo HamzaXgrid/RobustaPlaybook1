@@ -83,7 +83,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         except Exception as e:
             print(f"Error executing command in Pod: {str(e)}")
         POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
-        output1 = podR.exec((f"find {new_podMountPath}/ -type f"))
+        output1 = POD1.exec((f"find {new_podMountPath}/ -type f"))
 
             # Print the command output
         print("Command Output1:")
