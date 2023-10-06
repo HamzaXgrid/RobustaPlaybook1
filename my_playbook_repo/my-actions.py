@@ -87,7 +87,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         List_of_Files = POD1.exec(f"find {new_podMountPath}/ -type f")
 
             # Print the command output
-        print("Command Output1:")
+        print("Command Output1:",List_of_Files)
         #print(List_of_Files)
         event.add_enrichment([
             MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
@@ -148,7 +148,7 @@ def volume_analysis4(event: PersistentVolumeEvent):
                                     print("New path ",new_podMountPath)
                                     break 
         List_of_Files = pod.exec(f"find {new_podMountPath}/ -type f") 
-            
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",List_of_Files)
         event.add_enrichment([
             MarkdownBlock("The Name of The PV is " + persistent_VolumeName +persistent_VolumeClaimName + persistent_VolumeClaimNameSpace + mountedVolumeName),
             FileBlock("FilesList.log", List_of_Files)
