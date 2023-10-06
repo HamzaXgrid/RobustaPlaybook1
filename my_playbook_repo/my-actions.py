@@ -72,24 +72,31 @@ def volume_analysis6(event: PersistentVolumeEvent):
         container_name="new-pv-container"
         command = ["/bin/bash", "-c", "ls -R"]
         try:
-            # Execute the command in the Pod
-            resp = api.read_namespaced_pod_log(
+            # Start an exec session inside the Pod
+            exec_response = api.create_namespaced_pod_exec(
                 name=pod_name,
                 namespace=namespace,
                 container=container_name,
                 command=command,
+                stdin=True,
+                stdout=True,
+                stderr=True,
+                tty=False,
+                request_timeout=3600,
             )
 
-            # Print the command output
-            print(resp)
+            # Read and print the output
+            while exec_response.is_open():
+                resp = exec_response.read_stdout()
+                if resp is not None:
+                    print(resp)
+                else:
+                    break
+
+            exec_response.close()
 
         except Exception as e:
-            print(f"We got Error executing command in Pod: {str(e)}")        
-        #List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f")
-        event.add_enrichment([
-            MarkdownBlock("The Name of The PV is " + mountedVolumeName),
-            FileBlock("FilesList.log", new_podMountPath)
-        ])
+            print(f"Error executing command in Pod: {str(e)}")
     else:
         event.add_enrichment([
             MarkdownBlock("No PVC is attached to the PV named " + Persistent_Volume_Name)
