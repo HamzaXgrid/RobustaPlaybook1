@@ -69,7 +69,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 #break
         namespace = "default"
         pod_name = "new-pv-pod"
-        podR = RobustaPod(pod_name, namespace).obj
+        podR = RobustaPod(pod_name, namespace)
         print(podR)
 
         try:
