@@ -66,7 +66,24 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 new_podMountPath = podMountPath[1:]
                 print("New path ", new_podMountPath)
                 #break
-        
+        pod_name=Pod.metadata.name
+        namespace="default"
+        container_name=Pod.spec.containers.name
+        command = ["/bin/bash", "-c", "ls -R"]
+        try:
+            # Execute the command in the Pod
+            resp = api.read_namespaced_pod_log(
+                name=pod_name,
+                namespace=namespace,
+                container=container_name,
+                command=command,
+            )
+
+            # Print the command output
+            print(resp)
+
+        except Exception as e:
+            print(f"We got Error executing command in Pod: {str(e)}")        
         #List_of_Files = Pod.exec(f"find {new_podMountPath}/ -type f")
         event.add_enrichment([
             MarkdownBlock("The Name of The PV is " + mountedVolumeName),
