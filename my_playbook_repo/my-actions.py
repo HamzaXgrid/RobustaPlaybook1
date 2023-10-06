@@ -72,31 +72,37 @@ def volume_analysis6(event: PersistentVolumeEvent):
         container_name="new-pv-container"
         command = ["/bin/bash", "-c", "ls -R"]
         try:
-            # Start an exec session inside the Pod
-            exec_response = api.create_namespaced_pod_exec(
-                name=pod_name,
-                namespace=namespace,
-                container=container_name,
-                command=command,
-                stdin=True,
-                stdout=True,
-                stderr=True,
-                tty=False,
-                request_timeout=3600,
-            )
+            # Fetch the Pod object
+            pod = api.read_namespaced_pod(name=pod_name, namespace=namespace)
 
-            # Read and print the output
-            while exec_response.is_open():
-                resp = exec_response.read_stdout()
-                if resp is not None:
-                    print(resp)
-                else:
-                    break
+            if pod.status.phase == "Running":
+                # Create an exec request object
+                exec_request = client.V1ExecAction(command=command)
 
-            exec_response.close()
+                # Create an exec options object
+                exec_options = client.V1PodExecOptions(
+                    command=command, stdin=True, stdout=True, stderr=True, tty=False
+                )
+
+                # Start the exec process in the specified container
+                response = api.connect_get_namespaced_pod_exec(
+                    name=pod_name,
+                    namespace=namespace,
+                    container=container_name,
+                    command=command,
+                    stdin=True,
+                    stdout=True,
+                    stderr=True,
+                    tty=False,
+                )
+
+                # Print the output
+                for line in response:
+                    print(line)
 
         except Exception as e:
             print(f"Error executing command in Pod: {str(e)}")
+
     else:
         event.add_enrichment([
             MarkdownBlock("No PVC is attached to the PV named " + Persistent_Volume_Name)
