@@ -69,8 +69,8 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 #break
         namespace = "default"
         pod_name = "new-pv-pod"
-        podR = RobustaPod(name=pod_name, namespace=namespace)
-
+        podR = RobustaPod(pod_name, namespace)
+        print(podR)
         # Define the command to run inside the Pod
         command = "ls -R"
 
