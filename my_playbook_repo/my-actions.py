@@ -84,7 +84,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         #     print(f"Error executing command in Pod: {str(e)}")
         POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
         print(POD1)
-        List_of_Files = POD1.exec(f"find {new_podMountPath}/ -type f")
+        List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
 
             # Print the command output
         print("Command Output1:",List_of_Files)
@@ -238,6 +238,7 @@ def volume_analysis(event: PersistentVolumeEvent):
                 # Do this if no Pod is attached to PVC
                 reader_pod = persistent_volume_reader(persistent_volume=pv)
                 result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
+                print(result)
                 finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
                 finding.add_enrichment(
                     [
