@@ -112,7 +112,7 @@ def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
     print("===========================================")
     pod = None
     for pod in pod_list.items:
-        if pod_name==pvc_obj.metadata.name:
+        if pod_name==pod.metadata.name:
             return pod
         else:
             return None
