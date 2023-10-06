@@ -117,9 +117,8 @@ def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
         if pod_name==pod.metadata.name:
             print("IF")
             return pod
-        else:
-            print("ELSE")
-            return None
+    print("----------------")
+    return pod
 
 
 @action
