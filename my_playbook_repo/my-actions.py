@@ -82,7 +82,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
 
         except Exception as e:
             print(f"Error executing command in Pod: {str(e)}")
-        POD1=get_pod_to_exec_Command(PVC_Name,pod_name)
+        POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
         output1 = podR.exec((f"find {new_podMountPath}/ -type f"))
 
             # Print the command output
@@ -107,8 +107,9 @@ def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     except client.exceptions.ApiException as e:
         print(f"Error: {e}")
     return None
-def get_pod_to_exec_Command(pvc_obj,pod_name):
-    pod_list = PodList.listNamespacedPod(pvc_obj.metadata.namespace).obj
+def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
+    pod_list = PodList.listNamespacedPod(pod_namespace).obj
+    print("===========================================")
     pod = None
     for pod in pod_list.items:
         if pod_name==pvc_obj.metadata.name:
