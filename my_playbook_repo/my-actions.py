@@ -109,13 +109,16 @@ def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
         print(f"Error: {e}")
     return None
 def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
+    print("POD NAME SPACE",pod_namespace)
     pod_list = PodList.listNamespacedPod(pod_namespace).obj
-    print("===========================================")
+    print("======================================9=====",pod_list)
     pod = None
     for pod in pod_list.items:
         if pod_name==pod.metadata.name:
+            print("IF")
             return pod
         else:
+            print("ELSE")
             return None
 
 
