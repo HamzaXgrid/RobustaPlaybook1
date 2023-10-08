@@ -67,7 +67,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 reader_pod = persistent_volume_reader(persistent_volume=Persistent_Volume)
                 result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
                 print(result)
-                finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
+                finding.title = f"Files present on persistent volume {Persistent_Volume_Name} are: "
                 finding.add_enrichment(
                     [
                         FileBlock("Data.txt: ", result.encode()),
@@ -113,7 +113,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
                 FileBlock("FilesList.log", List_of_Files)
             ])
-            finding.title = f"Files present on persistent volume {Persistent_Volume_Name} are: "
+            finding.title = f"Files list present on persistent volume are: "
             finding.add_enrichment(
                 [
                     FileBlock("Data.txt: ", List_of_Files.encode()),
