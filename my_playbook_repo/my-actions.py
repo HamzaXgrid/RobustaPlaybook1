@@ -43,6 +43,15 @@ def my_action(event: PodEvent):
     ])
 @action
 def volume_analysis6(event: PersistentVolumeEvent):
+    function_name = "volume_analysis"
+    # https://docs.robusta.dev/master/extending/actions/findings-api.html
+    finding = Finding(
+        title="Persistent Volume content",
+        source=FindingSource.MANUAL,
+        aggregation_key=function_name,
+        finding_type=FindingType.REPORT,
+        failure=False,
+    )
     Persistent_Volume = event.get_persistentvolume()
     api = client.CoreV1Api()
     Persistent_Volume_Name = Persistent_Volume.metadata.name
@@ -93,6 +102,12 @@ def volume_analysis6(event: PersistentVolumeEvent):
             MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
             FileBlock("FilesList.log", List_of_Files)
         ])
+        finding.title = f"Files present on persistent volume {mountedVolumeName.metadata.name} are: "
+        finding.add_enrichment(
+            [
+                FileBlock("Data.txt: ", List_of_Files.encode()),
+            ]
+        )
     else:
         event.add_enrichment([
             MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
