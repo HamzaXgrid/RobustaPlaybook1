@@ -62,7 +62,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 finding.add_enrichment(
                     [
                         MarkdownBlock("The Name of The PuuuuuuuuuuuuuuuuV is "),
-                       # FileBlock("Data.txt: ", result.encode()),
+                        FileBlock("Data.txt: ", result.encode()),
                     ]
                 )
                 if reader_pod is not None:
@@ -224,8 +224,8 @@ def persistent_volume_reader(persistent_volume):
                 Container(
                     name="pvc-inspector",
                     image="busybox",
-                    #command=["tail"],
-                    #args=["-f", "/dev/null"],
+                    command=["tail"],
+                    args=["-f", "/dev/null"],
                     volumeMounts=[
                         VolumeMount(
                             mountPath="/pvc",
