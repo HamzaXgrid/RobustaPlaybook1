@@ -46,7 +46,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
     api = client.CoreV1Api()
     Persistent_Volume_Name = Persistent_Volume.metadata.name
     Persistent_Volume_Details = api.read_persistent_volume(Persistent_Volume_Name)
-    print("PV",Persistent_Volume_Details)
+    #print("PV",Persistent_Volume_Details)
     if Persistent_Volume_Details.spec.claim_ref is not None:
         PVC_Name = Persistent_Volume_Details.spec.claim_ref.name
         PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
@@ -56,18 +56,19 @@ def volume_analysis6(event: PersistentVolumeEvent):
         if Pod==None:
                 print("POD is None")
                 reader_pod = persistent_volume_reader(persistent_volume=Persistent_Volume)
-                result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
+                result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/")
                 print("results are ",result)
                 finding.title = f"Files present on persistent volume are: "
                 finding.add_enrichment(
                     [
+                        MarkdownBlock("The Name of The PuuuuuuuuuuuuuuuuV is "),
                         FileBlock("Data.txt: ", result.encode()),
                     ]
                 )
                 if reader_pod is not None:
                     print("Deleting the pod")
                     reader_pod.delete()
-        #print(Pod)
+                print(Pod)
         else:
 
             mountedVolumeName = None  # Initialize the variable
@@ -86,7 +87,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
             print("name of pod is ----------------llll ",pod_name)
 
             POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
-            print(POD1)
+            #print(POD1)
             List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
 
                 # Print the command output
@@ -105,7 +106,6 @@ def volume_analysis6(event: PersistentVolumeEvent):
     else:
         event.add_enrichment([
             MarkdownBlock("There is No PVC is claimed fot the PV"),
-            FileBlock("FilesList.log", List_of_Files)
         ])
 
 
