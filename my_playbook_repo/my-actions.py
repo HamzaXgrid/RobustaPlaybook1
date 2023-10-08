@@ -31,11 +31,9 @@ from robusta.api import *
 
 @action
 def volume_analysis6(event: PersistentVolumeEvent):
-    function_name = "volume_analysis"
     finding = Finding(
         title="Persistent Volume content",
         source=FindingSource.MANUAL,
-        aggregation_key=function_name,
         finding_type=FindingType.REPORT,
         failure=False,
     )
@@ -108,7 +106,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
             )
     else:
         event.add_enrichment([
-            MarkdownBlock("There is No PVC is claimed fot the PV"),
+            MarkdownBlock("PV is not claimed by any PVC"),
         ])
 
 
