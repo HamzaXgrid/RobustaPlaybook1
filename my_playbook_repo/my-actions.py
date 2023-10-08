@@ -39,6 +39,9 @@ def volume_analysis6(event: PersistentVolumeEvent):
         finding_type=FindingType.REPORT,
         failure=False,
     )
+    if not event.get_persistentvolume():
+        logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
+        return
     Persistent_Volume = event.get_persistentvolume()
     api = client.CoreV1Api()
     Persistent_Volume_Name = Persistent_Volume.metadata.name
@@ -164,108 +167,6 @@ def volume_analysis4(event: PersistentVolumeEvent):
         ])
 
 
-
-
-
-
-
-
-
-@action
-def volume_analysis(event: PersistentVolumeEvent):
-    """
-    This action shows you the files present on your persistent volume
-    """
-    function_name = "volume_analysis"
-    # https://docs.robusta.dev/master/extending/actions/findings-api.html
-    finding = Finding(
-        title="Persistent Volume content",
-        source=FindingSource.MANUAL,
-        aggregation_key=function_name,
-        finding_type=FindingType.REPORT,
-        failure=False,
-    )
-
-    if not event.get_persistentvolume():
-        logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
-        return
-
-    # Get persistent volume data the object contains data related to PV like metadata etc
-    pv = event.get_persistentvolume()
-    #print("PV is ",pv)
-    pv_claimref = pv.spec.claimRef
-    #print("pv_claimref is ",pv_claimref)
-    reader_pod = None
-
-    try:
-
-        if pv_claimref is not None:
-            # Do this if there is a PVC attached to PV
-            pvc_obj = PersistentVolumeClaim.readNamespacedPersistentVolumeClaim(
-                name=pv_claimref.name, namespace=pv_claimref.namespace
-            ).obj
-            print("pvc_obj is ",pvc_obj)
-            pod = get_pod_related_to_pvc(pvc_obj, pv)
-            #print("pod is ",pod)
-            if pod is not None:
-                # Do this if a Pod is using PVC
-
-                volume_mount_name = None
-
-                # Find name of the mounted volume on pod
-                for volume in pod.spec.volumes:
-                    if volume.persistentVolumeClaim.claimName == pv_claimref.name:
-                        volume_mount_name = volume.name
-                        break
-
-                # Use name of the mounted volume to find the correct volume mount
-                container_found_flag = False
-                container_volume_mount = None
-                for container in pod.spec.containers:
-                    if container_found_flag:
-                        break
-                    for volume_mount in container.volumeMounts:
-                        if volume_mount_name == volume_mount.name:
-                            container_volume_mount = volume_mount
-                            container_found_flag = True
-                            break
-                #print("DATA is")
-                #print(container_volume_mount.mountPath)
-                result = pod.exec(f"ls -R {container_volume_mount.mountPath}/")  # type: ignore
-                finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
-                finding.add_enrichment(
-                    [
-                        FileBlock("Data.txt: ", result.encode()),
-                    ]
-                )
-
-            else:
-                # Do this if no Pod is attached to PVC
-                reader_pod = persistent_volume_reader(persistent_volume=pv)
-                result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
-                print(result)
-                finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
-                finding.add_enrichment(
-                    [
-                        FileBlock("Data.txt: ", result.encode()),
-                    ]
-                )
-        else:
-            finding.add_enrichment(
-                [
-                    MarkdownBlock(f"Persistent volume named {pv.metadata.name} have no persistent volume claim."),
-                ]
-            )
-
-    finally:
-        # delete the reader pod
-        if reader_pod is not None:
-            reader_pod.delete()
-
-    event.add_finding(finding)
-
-
-
 def persistent_volume_reader(persistent_volume):
     reader_pod_spec = RobustaPod(
         apiVersion="v1",
@@ -332,123 +233,123 @@ def list_files_on_persistent_volume(event: PersistentVolumeEvent):
     event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
 
 
-def exec_commands(api_instance):
-    name = 'busybox-test'
-    resp = None
-    try:
-        resp = api_instance.read_namespaced_pod(name=name,
-                                                namespace='default')
-    except ApiException as e:
-        if e.status != 404:
-            print(f"Unknown error: {e}")
-            exit(1)
+# def exec_commands(api_instance):
+#     name = 'busybox-test'
+#     resp = None
+#     try:
+#         resp = api_instance.read_namespaced_pod(name=name,
+#                                                 namespace='default')
+#     except ApiException as e:
+#         if e.status != 404:
+#             print(f"Unknown error: {e}")
+#             exit(1)
 
-    if not resp:
-        print(f"Pod {name} does not exist. Creating it...")
-        pod_manifest = {
-            'apiVersion': 'v1',
-            'kind': 'Pod',
-            'metadata': {
-                'name': name
-            },
-            'spec': {
-                'containers': [{
-                    'image': 'busybox',
-                    'name': 'sleep',
-                    "args": [
-                        "/bin/sh",
-                        "-c",
-                        "while true;do date;sleep 5; done"
-                    ]
-                }]
-            }
-        }
-        resp = api_instance.create_namespaced_pod(body=pod_manifest,
-                                                  namespace='default')
-        while True:
-            resp = api_instance.read_namespaced_pod(name=name,
-                                                    namespace='default')
-            if resp.status.phase != 'Pending':
-                break
-            time.sleep(1)
-        print("Done.")
+#     if not resp:
+#         print(f"Pod {name} does not exist. Creating it...")
+#         pod_manifest = {
+#             'apiVersion': 'v1',
+#             'kind': 'Pod',
+#             'metadata': {
+#                 'name': name
+#             },
+#             'spec': {
+#                 'containers': [{
+#                     'image': 'busybox',
+#                     'name': 'sleep',
+#                     "args": [
+#                         "/bin/sh",
+#                         "-c",
+#                         "while true;do date;sleep 5; done"
+#                     ]
+#                 }]
+#             }
+#         }
+#         resp = api_instance.create_namespaced_pod(body=pod_manifest,
+#                                                   namespace='default')
+#         while True:
+#             resp = api_instance.read_namespaced_pod(name=name,
+#                                                     namespace='default')
+#             if resp.status.phase != 'Pending':
+#                 break
+#             time.sleep(1)
+#         print("Done.")
 
-    # Calling exec and waiting for response
-    exec_command = [
-        '/bin/sh',
-        '-c',
-        'echo This message goes to stderr; echo This message goes to stdout']
-    # When calling a pod with multiple containers running the target container
-    # has to be specified with a keyword argument container=<name>.
-    resp = stream(api_instance.connect_get_namespaced_pod_exec,
-                  name,
-                  'default',
-                  command=exec_command,
-                  stderr=True, stdin=False,
-                  stdout=True, tty=False)
-    print("Response: " + resp)
+#     # Calling exec and waiting for response
+#     exec_command = [
+#         '/bin/sh',
+#         '-c',
+#         'echo This message goes to stderr; echo This message goes to stdout']
+#     # When calling a pod with multiple containers running the target container
+#     # has to be specified with a keyword argument container=<name>.
+#     resp = stream(api_instance.connect_get_namespaced_pod_exec,
+#                   name,
+#                   'default',
+#                   command=exec_command,
+#                   stderr=True, stdin=False,
+#                   stdout=True, tty=False)
+#     print("Response: " + resp)
 
-    # Calling exec interactively
-    exec_command = ['/bin/sh']
-    resp = stream(api_instance.connect_get_namespaced_pod_exec,
-                  name,
-                  'default',
-                  command=exec_command,
-                  stderr=True, stdin=True,
-                  stdout=True, tty=False,
-                  _preload_content=False)
-    commands = [
-        "echo This message goes to stdout",
-        "echo \"This message goes to stderr\" >&2",
-    ]
+#     # Calling exec interactively
+#     exec_command = ['/bin/sh']
+#     resp = stream(api_instance.connect_get_namespaced_pod_exec,
+#                   name,
+#                   'default',
+#                   command=exec_command,
+#                   stderr=True, stdin=True,
+#                   stdout=True, tty=False,
+#                   _preload_content=False)
+#     commands = [
+#         "echo This message goes to stdout",
+#         "echo \"This message goes to stderr\" >&2",
+#     ]
 
-    while resp.is_open():
-        resp.update(timeout=1)
-        if resp.peek_stdout():
-            print(f"STDOUT: {resp.read_stdout()}")
-        if resp.peek_stderr():
-            print(f"STDERR: {resp.read_stderr()}")
-        if commands:
-            c = commands.pop(0)
-            print(f"Running command... {c}\n")
-            resp.write_stdin(c + "\n")
-        else:
-            break
+#     while resp.is_open():
+#         resp.update(timeout=1)
+#         if resp.peek_stdout():
+#             print(f"STDOUT: {resp.read_stdout()}")
+#         if resp.peek_stderr():
+#             print(f"STDERR: {resp.read_stderr()}")
+#         if commands:
+#             c = commands.pop(0)
+#             print(f"Running command... {c}\n")
+#             resp.write_stdin(c + "\n")
+#         else:
+#             break
 
-    resp.write_stdin("date\n")
-    sdate = resp.readline_stdout(timeout=3)
-    print(f"Server date command returns: {sdate}")
-    resp.write_stdin("whoami\n")
-    user = resp.readline_stdout(timeout=3)
-    print(f"Server user is: {user}")
-    resp.close()
+#     resp.write_stdin("date\n")
+#     sdate = resp.readline_stdout(timeout=3)
+#     print(f"Server date command returns: {sdate}")
+#     resp.write_stdin("whoami\n")
+#     user = resp.readline_stdout(timeout=3)
+#     print(f"Server user is: {user}")
+#     resp.close()
 
 
-pvc = PersistentVolumeClaim(name="new-pvc")
+# pvc = PersistentVolumeClaim(name="new-pvc")
 
-# Define the container specifications
-container = Container(
-    name="my-container",
-    image="nginx",  # Replace with your desired container image
-)
+# # Define the container specifications
+# container = Container(
+#     name="my-container",
+#     image="nginx",  # Replace with your desired container image
+# )
 
-# Define the volume and mount it to the container
-volume = Volume(
-    name="my-volume",
-    persistent_volume_claim=pvc,
-)
-volume_mount = VolumeMount(
-    name="my-volume",
-    mount_path="/mnt/data",  # Replace with the desired mount path
-)
+# # Define the volume and mount it to the container
+# volume = Volume(
+#     name="my-volume",
+#     persistent_volume_claim=pvc,
+# )
+# volume_mount = VolumeMount(
+#     name="my-volume",
+#     mount_path="/mnt/data",  # Replace with the desired mount path
+# )
 
-# Create the RobustaPod with the container and volume
-pod = RobustaPod(
-    name="my-pod",
-    containers=[container],
-    volumes=[volume],
-    volume_mounts=[volume_mount],
-)
+# # Create the RobustaPod with the container and volume
+# pod = RobustaPod(
+#     name="my-pod",
+#     containers=[container],
+#     volumes=[volume],
+#     volume_mounts=[volume_mount],
+# )
 
-# Apply the pod to your Kubernetes cluster
-pod.create()
+# # Apply the pod to your Kubernetes cluster
+# pod.create()
