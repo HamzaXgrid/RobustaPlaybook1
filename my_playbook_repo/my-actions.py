@@ -62,7 +62,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 finding.add_enrichment(
                     [
                         MarkdownBlock("The Name of The PuuuuuuuuuuuuuuuuV is "),
-                        FileBlock("Data.txt: ", result.encode()),
+                       # FileBlock("Data.txt: ", result.encode()),
                     ]
                 )
                 if reader_pod is not None:
@@ -165,7 +165,41 @@ def volume_analysis4(event: PersistentVolumeEvent):
         event.add_enrichment([
             MarkdownBlock("No PVC is attached to the PV named " + persistent_VolumeName)
         ])
-
+def persistent_volume_reader1(persistent_volume):
+    Volumes=[Volume(name="pvc-mount",
+                    persistentVolumeClaim=PersistentVolumeClaimVolumeSource(
+                        claimName=persistent_volume.spec.claimRef.name
+                    ),
+                )
+            ]
+    Containers=[
+                Container(
+                    name="pvc-inspector",
+                    image="busybox",
+                    command=["tail"],
+                    args=["-f", "/dev/null"],
+                    volumeMounts=[
+                        VolumeMount(
+                            mountPath="/pvc",
+                            name="pvc-mount",
+                        )
+                    ],
+                )
+            ]
+    Pod_Spec = RobustaPod(
+        apiVersion="v1",
+        kind="Pod",
+        metadata=ObjectMeta(
+            name="volume-inspector",
+            namespace=persistent_volume.spec.claimRef.namespace,
+        ),
+        spec=PodSpec(
+            volumes=Volumes,
+            containers=Containers,
+        ),
+    )
+    Temp_pod = Pod_Spec.create()
+    return Temp_pod
 
 def persistent_volume_reader(persistent_volume):
     reader_pod_spec = RobustaPod(
@@ -188,8 +222,8 @@ def persistent_volume_reader(persistent_volume):
                 Container(
                     name="pvc-inspector",
                     image="busybox",
-                    command=["tail"],
-                    args=["-f", "/dev/null"],
+                    #command=["tail"],
+                    #args=["-f", "/dev/null"],
                     volumeMounts=[
                         VolumeMount(
                             mountPath="/pvc",
