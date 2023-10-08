@@ -56,7 +56,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         if Pod==None:
                 print("POD is None")
                 reader_pod = persistent_volume_reader(persistent_volume=Persistent_Volume)
-                result = reader_pod.exec(f"find {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/ -type f")
+                result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/")
                 print("results are ",result)
                 finding.title = f"Files present on persistent volume are: "
                 finding.add_enrichment(
@@ -68,6 +68,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 if reader_pod is not None:
                     print("Deleting the pod")
                     reader_pod.delete()
+                    return
                 print(Pod)
         else:
 
@@ -90,7 +91,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
 
             POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
             #print(POD1)
-            List_of_Files = POD1.exec(f"find {new_podMountPath}/ -type f")
+            List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
 
                 # Print the command output
             print("Command Output1:",List_of_Files)
