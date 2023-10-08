@@ -63,51 +63,62 @@ def volume_analysis6(event: PersistentVolumeEvent):
         print(PVC_Name)
         print(PVC_NameSpace)
         Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
-
+        if Pod==None:
+                reader_pod = persistent_volume_reader(persistent_volume=pv)
+                result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
+                print(result)
+                finding.title = f"Files present on persistent volume {pv.metadata.name} are: "
+                finding.add_enrichment(
+                    [
+                        FileBlock("Data.txt: ", result.encode()),
+                    ]
+                )
         #print(Pod)
-        mountedVolumeName = None  # Initialize the variable
-        for volume in Pod.spec.volumes:
-            if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
-                mountedVolumeName = volume.name
-        for containers in Pod.spec.containers:
-            #container_name=Pod.containers.name
-            if containers.volume_mounts[0].name == mountedVolumeName:
-                podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
-                new_podMountPath = podMountPath[1:]
-                print("New path ", new_podMountPath)
-                #break
-        namespace = "default"
-        pod_name = "new-pv-pod"
-        # podR = RobustaPod(pod_name, namespace)
-        # print(podR)
+        else:
 
-        # try:
-        #     # Execute the command inside the Pod
-        #     output = podR.exec((f"find {new_podMountPath}/ -type f"))
+            mountedVolumeName = None  # Initialize the variable
+            for volume in Pod.spec.volumes:
+                if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
+                    mountedVolumeName = volume.name
+            for containers in Pod.spec.containers:
+                #container_name=Pod.containers.name
+                if containers.volume_mounts[0].name == mountedVolumeName:
+                    podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
+                    new_podMountPath = podMountPath[1:]
+                    print("New path ", new_podMountPath)
+                    #break
+            namespace = "default"
+            pod_name = "new-pv-pod"
+            # podR = RobustaPod(pod_name, namespace)
+            # print(podR)
 
-        #     # Print the command output
-        #     print("Command Output:")
-        #     print(output)
+            # try:
+            #     # Execute the command inside the Pod
+            #     output = podR.exec((f"find {new_podMountPath}/ -type f"))
 
-        # except Exception as e:
-        #     print(f"Error executing command in Pod: {str(e)}")
-        POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
-        print(POD1)
-        List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
+            #     # Print the command output
+            #     print("Command Output:")
+            #     print(output)
 
-            # Print the command output
-        print("Command Output1:",List_of_Files)
-        #print(List_of_Files)
-        event.add_enrichment([
-            MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
-            FileBlock("FilesList.log", List_of_Files)
-        ])
-        finding.title = f"Files present on persistent volume {Persistent_Volume_Name} are: "
-        finding.add_enrichment(
-            [
-                FileBlock("Data.txt: ", List_of_Files.encode()),
-            ]
-        )
+            # except Exception as e:
+            #     print(f"Error executing command in Pod: {str(e)}")
+            POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
+            print(POD1)
+            List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
+
+                # Print the command output
+            print("Command Output1:",List_of_Files)
+            #print(List_of_Files)
+            event.add_enrichment([
+                MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
+                FileBlock("FilesList.log", List_of_Files)
+            ])
+            finding.title = f"Files present on persistent volume {Persistent_Volume_Name} are: "
+            finding.add_enrichment(
+                [
+                    FileBlock("Data.txt: ", List_of_Files.encode()),
+                ]
+            )
     else:
         event.add_enrichment([
             MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
@@ -129,7 +140,6 @@ def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     return None
 def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
     pod_list = PodList.listNamespacedPod(pod_namespace).obj
-    print("======================================9=====",pod_list)
     pod = None
     for pod in pod_list.items:
         if pod_name==pod.metadata.name:
