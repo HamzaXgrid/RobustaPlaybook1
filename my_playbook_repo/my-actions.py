@@ -102,7 +102,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
             MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
             FileBlock("FilesList.log", List_of_Files)
         ])
-        finding.title = f"Files present on persistent volume {mountedVolumeName.metadata.name} are: "
+        finding.title = f"Files present on persistent volume {Persistent_Volume_Name} are: "
         finding.add_enrichment(
             [
                 FileBlock("Data.txt: ", List_of_Files.encode()),
