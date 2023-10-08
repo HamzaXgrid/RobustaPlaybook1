@@ -34,6 +34,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
     finding = Finding(
         title="Persistent Volume content",
         source=FindingSource.MANUAL,
+        aggregation_key="volume_analysis6",
         finding_type=FindingType.REPORT,
         failure=False,
     )
@@ -53,7 +54,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
         if Pod==None:
                 print("POD is None")
-                reader_pod = persistent_volume_reader(persistent_volume=Persistent_Volume)
+                reader_pod = persistent_volume_reader1(persistent_volume=Persistent_Volume)
                 result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/")
                 print("results are ",result)
                 finding.title = f"Files present on persistent volume are: "
