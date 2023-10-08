@@ -55,7 +55,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
         if Pod==None:
                 print("POD is None")
-                reader_pod = persistent_volume_reader1(persistent_volume=Persistent_Volume)
+                reader_pod = persistent_volume_reader(persistent_volume=Persistent_Volume)
                 result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/")
                 print("results are ",result)
                 finding.title = f"Files present on persistent volume are: "
@@ -77,12 +77,14 @@ def volume_analysis6(event: PersistentVolumeEvent):
                     mountedVolumeName = volume.name
             for containers in Pod.spec.containers:
                 #container_name=Pod.containers.name
-                if containers.volume_mounts[0].name == mountedVolumeName:
-                    podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
-                    new_podMountPath = podMountPath[1:]
-                    print("New path ", new_podMountPath)
-                    #break
-            namespace = "default"
+                for volumes in containers.volume_mounts:
+
+                    if volumes.name == mountedVolumeName:
+                        podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
+                        new_podMountPath = podMountPath[1:]
+                        print("New path ", new_podMountPath)
+                        #break
+            namespace = PVC_NameSpace
             pod_name = Pod.metadata.name
             print("name of pod is ----------------llll ",pod_name)
 
