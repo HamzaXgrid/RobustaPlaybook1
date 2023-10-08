@@ -28,19 +28,7 @@ import subprocess
 
 from robusta.api import *
 
-@action
-def my_action(event: PodEvent):
-    # we have full access to the pod on which the alert fired
-    pod = event.get_pod()
-    pod_name = pod.metadata.name
-    pod_logs = pod.get_logs()
-    pod_processes = pod.exec("ps aux")
 
-    # this is how you send data to slack or other destinations
-    event.add_enrichment([
-        MarkdownBlock("*Oh no!* An alert occurred on " + pod_name),
-        FileBlock("crashing-pod.log", pod_processes)
-    ])
 @action
 def volume_analysis6(event: PersistentVolumeEvent):
     function_name = "volume_analysis"
@@ -64,6 +52,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         print(PVC_NameSpace)
         Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
         if Pod==None:
+                print("POD is None")
                 reader_pod = persistent_volume_reader(persistent_volume=Persistent_Volume)
                 result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
                 print(result)
@@ -73,6 +62,9 @@ def volume_analysis6(event: PersistentVolumeEvent):
                         FileBlock("Data.txt: ", result.encode()),
                     ]
                 )
+                if reader_pod is not None:
+                    print("Deleting the pod")
+                    reader_pod.delete()
         #print(Pod)
         else:
 
@@ -88,20 +80,9 @@ def volume_analysis6(event: PersistentVolumeEvent):
                     print("New path ", new_podMountPath)
                     #break
             namespace = "default"
-            pod_name = "new-pv-pod"
-            # podR = RobustaPod(pod_name, namespace)
-            # print(podR)
+            pod_name = Pod.metadata.name
+            print("name of pod is ----------------llll ",pod_name)
 
-            # try:
-            #     # Execute the command inside the Pod
-            #     output = podR.exec((f"find {new_podMountPath}/ -type f"))
-
-            #     # Print the command output
-            #     print("Command Output:")
-            #     print(output)
-
-            # except Exception as e:
-            #     print(f"Error executing command in Pod: {str(e)}")
             POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
             print(POD1)
             List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
@@ -442,3 +423,33 @@ def exec_commands(api_instance):
     user = resp.readline_stdout(timeout=3)
     print(f"Server user is: {user}")
     resp.close()
+
+
+pvc = PersistentVolumeClaim(name="new-pvc")
+
+# Define the container specifications
+container = Container(
+    name="my-container",
+    image="nginx",  # Replace with your desired container image
+)
+
+# Define the volume and mount it to the container
+volume = Volume(
+    name="my-volume",
+    persistent_volume_claim=pvc,
+)
+volume_mount = VolumeMount(
+    name="my-volume",
+    mount_path="/mnt/data",  # Replace with the desired mount path
+)
+
+# Create the RobustaPod with the container and volume
+pod = RobustaPod(
+    name="my-pod",
+    containers=[container],
+    volumes=[volume],
+    volume_mounts=[volume_mount],
+)
+
+# Apply the pod to your Kubernetes cluster
+pod.create()
