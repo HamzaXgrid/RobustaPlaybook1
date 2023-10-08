@@ -57,8 +57,8 @@ def volume_analysis6(event: PersistentVolumeEvent):
                 print("POD is None")
                 reader_pod = persistent_volume_reader(persistent_volume=Persistent_Volume)
                 result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}")
-                print(result)
-                finding.title = f"Files present on persistent volume {Persistent_Volume_Name} are: "
+                print("results are ",result)
+                finding.title = f"Files present on persistent volume are: "
                 finding.add_enrichment(
                     [
                         FileBlock("Data.txt: ", result.encode()),
@@ -104,7 +104,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
             )
     else:
         event.add_enrichment([
-            MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
+            MarkdownBlock("There is No PVC is claimed fot the PV"),
             FileBlock("FilesList.log", List_of_Files)
         ])
 
