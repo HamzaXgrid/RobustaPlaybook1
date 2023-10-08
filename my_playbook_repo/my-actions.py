@@ -90,7 +90,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
 
             POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
             #print(POD1)
-            List_of_Files = POD1.exec(f"find {new_podMountPath}/ / -type f")
+            List_of_Files = POD1.exec(f"find {new_podMountPath}/ -type f")
 
                 # Print the command output
             print("Command Output1:",List_of_Files)
