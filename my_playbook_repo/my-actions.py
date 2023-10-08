@@ -32,7 +32,6 @@ from robusta.api import *
 @action
 def volume_analysis6(event: PersistentVolumeEvent):
     function_name = "volume_analysis"
-    # https://docs.robusta.dev/master/extending/actions/findings-api.html
     finding = Finding(
         title="Persistent Volume content",
         source=FindingSource.MANUAL,
