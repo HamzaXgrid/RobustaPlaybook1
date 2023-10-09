@@ -4,7 +4,7 @@ from kubernetes import client, config
 from hikaru.model.rel_1_26 import *
 import os
 from robusta.api import *
-import subprocess
+
 
 
 
@@ -43,6 +43,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                     FileBlock("Data.txt: ", result.encode()),
                 ]
                 )
+            event.add_finding(finding)
             if reader_pod is not None:
                 print("Deleting the pod")
                 reader_pod.delete()
