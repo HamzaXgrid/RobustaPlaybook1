@@ -205,8 +205,8 @@ def persistent_volume_reader(persistent_volume):
                 Container(
                     name="pvc-inspector",
                     image="busybox",
-                    command=["tail"],
-                    args=["-f", "/dev/null"],
+                    command=["echo"],  # Set the command to "echo"
+                    args=["this", "function"], 
                     volumeMounts=[
                         VolumeMount(
                             mountPath="/pvc",
