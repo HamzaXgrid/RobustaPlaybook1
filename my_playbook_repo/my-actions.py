@@ -54,7 +54,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
         Pod = pods_PVC(api, PVC_Name, PVC_NameSpace)
         if Pod==None:
                 print("POD is None")
-                reader_pod = persistent_volume_reader1(persistent_volume=Persistent_Volume)
+                reader_pod = Temp_Pod(persistent_volume=Persistent_Volume)
                 result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/")
                 print("results are ",result)
                 finding.title = f"Files present on persistent volume are: "
@@ -167,7 +167,7 @@ def List_of_Files_on_PV1(event: PersistentVolumeEvent):
         event.add_enrichment([
             MarkdownBlock("No PVC is attached to the PV named " + persistent_VolumeName)
         ])
-def persistent_volume_reader1(persistent_volume):
+def Temp_Pod(persistent_volume):
     Volumes=[Volume(name="pvc-mount",
                     persistentVolumeClaim=PersistentVolumeClaimVolumeSource(
                         claimName=persistent_volume.spec.claimRef.name
@@ -176,14 +176,10 @@ def persistent_volume_reader1(persistent_volume):
             ]
     Containers=[
                 Container(
-                    name="pvc-inspector",
+                    name="Temp_Pod",
                     image="busybox",
-                    command=["tail"],
-                    args= [
-                        "/bin/sh",
-                        "-c",
-                        "while true;do date;sleep 5; done"
-                    ],
+                    command=["echo"], 
+                    args=["this", "function"],
                     volumeMounts=[
                         VolumeMount(
                             mountPath="/pvc",
