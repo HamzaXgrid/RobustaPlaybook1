@@ -1,7 +1,26 @@
 
 import logging
 from kubernetes import client, config
-from hikaru.model.rel_1_26 import *
+from hikaru.model.rel_1_26 import (
+    Container,
+    ObjectMeta,
+    PersistentVolumeClaim,
+    PersistentVolumeClaimVolumeSource,
+    PodList,
+    PodSpec,
+    Volume,
+    VolumeMount,
+)
+from robusta.api import (
+    FileBlock,
+    Finding,
+    FindingSource,
+    FindingType,
+    MarkdownBlock,
+    PersistentVolumeEvent,
+    RobustaPod,
+    action,
+)
 import os
 from robusta.api import *
 import subprocess
@@ -32,7 +51,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
         print(PVC_Name)
         print(PVC_NameSpace)
-        Pod = pods_PVC(api, PVC_Name, PVC_NameSpace)
+        Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
         if Pod==None:
                 print("POD is None")
                 reader_pod = persistent_volume_reader1(persistent_volume=Persistent_Volume)
@@ -92,7 +111,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         ])
 
 
-def pods_PVC(api, pvc_name, pvc_namespace):
+def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
     try:
         pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
         if pvc.spec.volume_name:
@@ -232,7 +251,22 @@ def get_pod_related_to_pvc(pvc_obj, pv_obj):
             if volume.persistentVolumeClaim:
                 if volume.persistentVolumeClaim.claimName == pv_obj.spec.claimRef.name:
                     return pod
+@action
+def list_files_on_persistent_volume(event: PersistentVolumeEvent):
+    pv = event.get_persistentvolume()
 
+    # Specify the path to the Persistent Volume
+    persistent_volume_path = "/usr/share/nginx/html" 
+    print(f"Listing files in path: {persistent_volume_path}")
+
+        # List all files in the specified path
+    files = os.listdir(persistent_volume_path)
+    print("hhhhhhhhhhhhhhhhhh")
+    print(f"Listing files in path 1: {files}")
+        # Prepare a message with the list of files
+
+        # Add the file list as an enrichment
+    event.add_enrichment(MarkdownBlock("Files in the Persistent Volume"))
 
 
 # def exec_commands(api_instance):
