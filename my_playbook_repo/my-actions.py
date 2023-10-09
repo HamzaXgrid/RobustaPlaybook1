@@ -1,8 +1,7 @@
 
 import logging
-from kubernetes import client, config
+from kubernetes import client
 from hikaru.model.rel_1_26 import *
-import os
 from robusta.api import *
 
 @action
@@ -19,15 +18,15 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
     api = client.CoreV1Api()
     Persistent_Volume_Name = Persistent_Volume.metadata.name
     Persistent_Volume_Details = api.read_persistent_volume(Persistent_Volume_Name)
-    if Persistent_Volume_Details.spec.claim_ref is not None:
+    if Persistent_Volume_Details.spec.claim_ref is not None:# We are checking whether PV is claimed by any PVC.
         PVC_Name = Persistent_Volume_Details.spec.claim_ref.name
         PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
         print(PVC_Name)
         print(PVC_NameSpace)
         Pod = pods_PVC(api, PVC_Name, PVC_NameSpace)
-        if Pod==None:
-            reader_pod = Temp_Pod(persistent_volume=Persistent_Volume)
-            result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/")
+        if Pod==None:# If no Pod claims any PVC than creates a temporary pod
+            temp_pod = Temp_Pod(persistent_volume=Persistent_Volume)
+            result = temp_pod.exec(f"ls -R {temp_pod.spec.containers[0].volumeMounts[0].mountPath}/")
             finding.title = f"Files present on persistent volume are: "
             finding.add_enrichment(
                 [
@@ -36,13 +35,12 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                 ]
                 )
             event.add_finding(finding)
-            if reader_pod is not None:
+            if temp_pod is not None: # Deletes the Temporary Pod, This is necessary step as we don't want unused resources in our cluster
                 print("Deleting the pod")
-                reader_pod.delete()
+                temp_pod.delete()
                 return
         else:
-
-            mountedVolumeName = None  # Initialize the variable
+            mountedVolumeName = None  # Initialize the variable  
             for volume in Pod.spec.volumes:
                 if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
                     mountedVolumeName = volume.name
@@ -51,7 +49,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                 for volumes in containers.volume_mounts:
                     if volumes.name == mountedVolumeName:
                         podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
-                        new_podMountPath = podMountPath[1:]
+                        new_podMountPath = podMountPath[1:] #Removing the Slash from the Mountpath, This part is only necessary if we are executing find command inside the pod instead of ls
                         #break
             namespace = PVC_NameSpace
             pod_name = Pod.metadata.name
@@ -73,7 +71,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
         ])
 
 
-def pods_PVC(api, pvc_name, pvc_namespace):
+def pods_PVC(api, pvc_name, pvc_namespace):#Returns the POD that claimed the PVC passed in the function
     try:
         pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
         if pvc.spec.volume_name:
@@ -86,7 +84,7 @@ def pods_PVC(api, pvc_name, pvc_namespace):
         print(f"Error: {e}")
     return None
 
-def Temp_Pod(persistent_volume):
+def Temp_Pod(persistent_volume):#Creates a temporary Pod and attached the pod with the PVC
     Volumes=[Volume(name="pvc-mount",
                     persistentVolumeClaim=PersistentVolumeClaimVolumeSource(
                         claimName=persistent_volume.spec.claimRef.name
@@ -122,7 +120,7 @@ def Temp_Pod(persistent_volume):
     Temp_pod = Pod_Spec.create()
     return Temp_pod
 
-def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
+def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace): #Returns the Pod with Specific name
     pod_list = PodList.listNamespacedPod(pod_namespace).obj
     pod = None
     for pod in pod_list.items:
