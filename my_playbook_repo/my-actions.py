@@ -30,11 +30,11 @@ from robusta.api import *
 
 
 @action
-def volume_analysis6(event: PersistentVolumeEvent):
+def List_of_Files_on_PV(event: PersistentVolumeEvent):
     finding = Finding(
         title="Persistent Volume content",
         source=FindingSource.MANUAL,
-        aggregation_key="volume_analysis6",
+        aggregation_key="List_of_Files_on_PV",
         finding_type=FindingType.REPORT,
         failure=False,
     )
@@ -51,7 +51,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
         print(PVC_Name)
         print(PVC_NameSpace)
-        Pod = get_pod_attached_to_pvc(api, PVC_Name, PVC_NameSpace)
+        Pod = pods_PVC(api, PVC_Name, PVC_NameSpace)
         if Pod==None:
                 print("POD is None")
                 reader_pod = persistent_volume_reader1(persistent_volume=Persistent_Volume)
@@ -111,7 +111,7 @@ def volume_analysis6(event: PersistentVolumeEvent):
         ])
 
 
-def get_pod_attached_to_pvc(api, pvc_name, pvc_namespace):
+def pods_PVC(api, pvc_name, pvc_namespace):
     try:
         pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
         if pvc.spec.volume_name:
@@ -133,7 +133,7 @@ def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
 
 
 @action
-def volume_analysis4(event: PersistentVolumeEvent):
+def List_of_Files_on_PV(event: PersistentVolumeEvent):
     persistent_Volume=event.get_persistentvolume()
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
     persistent_VolumeName=persistent_Volume.metadata.name
