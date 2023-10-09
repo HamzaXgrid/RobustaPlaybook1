@@ -68,7 +68,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                     print("Deleting the pod")
                     reader_pod.delete()
                     return
-                print(Pod)
+                print("Pod is--->>>>>",Pod)
         else:
 
             mountedVolumeName = None  # Initialize the variable
@@ -133,7 +133,7 @@ def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
 
 
 @action
-def List_of_Files_on_PV(event: PersistentVolumeEvent):
+def List_of_Files_on_PV1(event: PersistentVolumeEvent):
     persistent_Volume=event.get_persistentvolume()
     print("The name of the Persisitent Volume is ",persistent_Volume.metadata.name)
     persistent_VolumeName=persistent_Volume.metadata.name
