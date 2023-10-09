@@ -13,6 +13,13 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
     )
     if not event.get_persistentvolume():
         logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
+        finding.title = f"No PV with this name "
+        finding.add_enrichment(
+            [
+                MarkdownBlock("No PV"),
+            ]
+            )
+        event.add_finding(finding)
         return
     Persistent_Volume = event.get_persistentvolume()
     api = client.CoreV1Api()
