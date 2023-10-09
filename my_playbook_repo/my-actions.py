@@ -13,13 +13,6 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
     )
     if not event.get_persistentvolume():
         logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
-        finding.title = f"No PV with this name "
-        finding.add_enrichment(
-            [
-                MarkdownBlock("No PV"),
-            ]
-            )
-        event.add_finding(finding)
         return
     Persistent_Volume = event.get_persistentvolume()
     api = client.CoreV1Api()
@@ -34,7 +27,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
         if Pod==None:# If no Pod claims any PVC than creates a temporary pod
             temp_pod = Temp_Pod(persistent_volume=Persistent_Volume)
             result = temp_pod.exec(f"ls -R {temp_pod.spec.containers[0].volumeMounts[0].mountPath}/")
-            finding.title = f"Files present on persistent volume are: "
+            finding.title = f"Persistent Volume Content:"
             finding.add_enrichment(
                 [
                     MarkdownBlock("Data on the PV "),
@@ -66,16 +59,18 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                 MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
                 FileBlock("FilesList.log", List_of_Files)
             ])
-            finding.title = f"Files list present on persistent volume are: "
+            finding.title = f"Persistent Volume Content: "
             finding.add_enrichment(
                 [
                     FileBlock("Data.txt: ", List_of_Files.encode()),
                 ]
             )
     else:
+        finding.title = f"Persistent Volume Content: "
         event.add_enrichment([
             MarkdownBlock("PV is not claimed by any PVC"),
         ])
+        event.add_finding(finding)
 
 
 def pods_PVC(api, pvc_name, pvc_namespace):#Returns the POD that claimed the PVC passed in the function
