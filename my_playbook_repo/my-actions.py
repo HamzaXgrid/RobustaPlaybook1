@@ -179,7 +179,11 @@ def persistent_volume_reader1(persistent_volume):
                     name="pvc-inspector",
                     image="busybox",
                     command=["tail"],
-                    args=["-f", "/dev/null"],
+                    args= [
+                        "/bin/sh",
+                        "-c",
+                        "while true;do date;sleep 5; done"
+                    ],
                     volumeMounts=[
                         VolumeMount(
                             mountPath="/pvc",
