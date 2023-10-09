@@ -7,8 +7,6 @@ from robusta.api import *
 import subprocess
 
 
-from robusta.api import *
-
 
 @action
 def List_of_Files_on_PV(event: PersistentVolumeEvent):
@@ -34,22 +32,21 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
         print(PVC_NameSpace)
         Pod = pods_PVC(api, PVC_Name, PVC_NameSpace)
         if Pod==None:
-                print("POD is None")
-                reader_pod = Temp_Pod(persistent_volume=Persistent_Volume)
-                result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/")
-                print("results are ",result)
-                finding.title = f"Files present on persistent volume are: "
-                finding.add_enrichment(
-                    [
-                        MarkdownBlock("The Name of The PuuuuuuuuuuuuuuuuV is "),
-                        FileBlock("Data.txt: ", result.encode()),
-                    ]
+            print("POD is None")
+            reader_pod = Temp_Pod(persistent_volume=Persistent_Volume)
+            result = reader_pod.exec(f"ls -R {reader_pod.spec.containers[0].volumeMounts[0].mountPath}/")
+            print("results are ",result)
+            finding.title = f"Files present on persistent volume are: "
+            finding.add_enrichment(
+                [
+                    MarkdownBlock("Data on the PV "),
+                    FileBlock("Data.txt: ", result.encode()),
+                ]
                 )
-                if reader_pod is not None:
-                    print("Deleting the pod")
-                    reader_pod.delete()
-                    return
-                print("Pod is--->>>>>",Pod)
+            if reader_pod is not None:
+                print("Deleting the pod")
+                reader_pod.delete()
+                return
         else:
 
             mountedVolumeName = None  # Initialize the variable
@@ -67,8 +64,6 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                         #break
             namespace = PVC_NameSpace
             pod_name = Pod.metadata.name
-            print("name of pod is ----------------llll ",pod_name)
-
             POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
             #print(POD1)
             List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
@@ -104,6 +99,42 @@ def pods_PVC(api, pvc_name, pvc_namespace):
     except client.exceptions.ApiException as e:
         print(f"Error: {e}")
     return None
+def Temp_Pod(persistent_volume):
+    Volumes=[Volume(name="pvc-mount",
+                    persistentVolumeClaim=PersistentVolumeClaimVolumeSource(
+                        claimName=persistent_volume.spec.claimRef.name
+                    ),
+                )
+            ]
+    Containers=[
+                Container(
+                    name="pvc-inspector",
+                    image="busybox",
+                    command=["tail"],
+                    args=["-f", "/dev/null"],
+                    volumeMounts=[
+                        VolumeMount(
+                            mountPath="/pvc",
+                            name="pvc-mount",
+                        )
+                    ],
+                )
+            ]
+    Pod_Spec = RobustaPod(
+        apiVersion="v1",
+        kind="Pod",
+        metadata=ObjectMeta(
+            name="volume-inspector",
+            namespace=persistent_volume.spec.claimRef.namespace,
+        ),
+        spec=PodSpec(
+            volumes=Volumes,
+            containers=Containers,
+        ),
+    )
+    Temp_pod = Pod_Spec.create()
+    return Temp_pod
+
 def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace):
     pod_list = PodList.listNamespacedPod(pod_namespace).obj
     pod = None
@@ -148,41 +179,7 @@ def List_of_Files_on_PV1(event: PersistentVolumeEvent):
         event.add_enrichment([
             MarkdownBlock("No PVC is attached to the PV named " + persistent_VolumeName)
         ])
-def Temp_Pod(persistent_volume):
-    Volumes=[Volume(name="pvc-mount",
-                    persistentVolumeClaim=PersistentVolumeClaimVolumeSource(
-                        claimName=persistent_volume.spec.claimRef.name
-                    ),
-                )
-            ]
-    Containers=[
-                Container(
-                    name="pvc-inspector",
-                    image="busybox",
-                    command=["tail"],
-                    args=["-f", "/dev/null"],
-                    volumeMounts=[
-                        VolumeMount(
-                            mountPath="/pvc",
-                            name="pvc-mount",
-                        )
-                    ],
-                )
-            ]
-    Pod_Spec = RobustaPod(
-        apiVersion="v1",
-        kind="Pod",
-        metadata=ObjectMeta(
-            name="volume-inspector",
-            namespace=persistent_volume.spec.claimRef.namespace,
-        ),
-        spec=PodSpec(
-            volumes=Volumes,
-            containers=Containers,
-        ),
-    )
-    Temp_pod = Pod_Spec.create()
-    return Temp_pod
+
 
 def persistent_volume_reader(persistent_volume):
     reader_pod_spec = RobustaPod(
