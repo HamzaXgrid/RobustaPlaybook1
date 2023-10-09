@@ -157,7 +157,7 @@ def Temp_Pod(persistent_volume):
             ]
     Containers=[
                 Container(
-                    name="Temp_Pod",
+                    name="pvc-inspector",
                     image="busybox",
                     command=["tail"],
                     args=["-f", "/dev/null"],
