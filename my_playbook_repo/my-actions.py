@@ -1,26 +1,7 @@
 
 import logging
 from kubernetes import client, config
-from hikaru.model.rel_1_26 import (
-    Container,
-    ObjectMeta,
-    PersistentVolumeClaim,
-    PersistentVolumeClaimVolumeSource,
-    PodList,
-    PodSpec,
-    Volume,
-    VolumeMount,
-)
-from robusta.api import (
-    FileBlock,
-    Finding,
-    FindingSource,
-    FindingType,
-    MarkdownBlock,
-    PersistentVolumeEvent,
-    RobustaPod,
-    action,
-)
+from hikaru.model.rel_1_26 import *
 import os
 from robusta.api import *
 import subprocess
@@ -178,8 +159,8 @@ def Temp_Pod(persistent_volume):
                 Container(
                     name="Temp_Pod",
                     image="busybox",
-                    command=["echo"], 
-                    args=["this", "function"],
+                    command=["tail"],
+                    args=["-f", "/dev/null"],
                     volumeMounts=[
                         VolumeMount(
                             mountPath="/pvc",
