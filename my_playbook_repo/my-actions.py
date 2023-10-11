@@ -11,9 +11,6 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
         source=FindingSource.MANUAL,
         aggregation_key="List_of_Files_on_PV",
     )
-    if not event.get_persistentvolume():
-        logging.error(f"VolumeAnalysis was called on event without Persistent Volume: {event}")
-        return
     Persistent_Volume = event.get_persistentvolume()
     api = client.CoreV1Api()
     Persistent_Volume_Name = Persistent_Volume.metadata.name
@@ -138,3 +135,4 @@ def get_pod_to_exec_Command(pod_name,pod_namespace): #Returns the Pod with Speci
 
 
 
+#pod.exec(f"find {new_podMountPath} -type f") 
