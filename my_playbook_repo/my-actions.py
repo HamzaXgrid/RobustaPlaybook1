@@ -1,5 +1,5 @@
 
-import logging
+
 from kubernetes import client
 from hikaru.model.rel_1_26 import *
 from robusta.api import *
@@ -31,7 +31,6 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                     FileBlock("Data.txt: ", result.encode()),
                 ]
                 )
-            event.add_finding(finding)
             if temp_pod is not None: # Deletes the Temporary Pod, This is necessary step as we don't want unused resources in our cluster
                 print("Deleting the pod")
                 temp_pod.delete()
@@ -43,7 +42,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                     mountedVolumeName = volume.name
             for containers in Pod.spec.containers:
                 #container_name=Pod.containers.name
-                for volumes in containers.volume_mounts:
+                for volumes in containers.volume_mounts: 
                     if volumes.name == mountedVolumeName:
                         podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
                         new_podMountPath = podMountPath[1:] #Removing the Slash from the Mountpath, This part is only necessary if we are executing find command inside the pod instead of ls
@@ -51,6 +50,8 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
             namespace = PVC_NameSpace
             pod_name = Pod.metadata.name
             POD1=get_pod_to_exec_Command(pod_name,namespace)
+            print("Pod >>>",Pod)
+            print("Pod >>>",POD1)
             List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
             event.add_enrichment([
                 MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
@@ -67,7 +68,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
         event.add_enrichment([
             MarkdownBlock("PV is not claimed by any PVC"),
         ])
-        event.add_finding(finding)
+    event.add_finding(finding)
 
 
 def pods_PVC(api, pvc_name, pvc_namespace):#Returns the POD that claimed the PVC passed in the function
