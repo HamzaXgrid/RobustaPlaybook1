@@ -53,7 +53,7 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                         #break
             namespace = PVC_NameSpace
             pod_name = Pod.metadata.name
-            POD1=get_pod_to_exec_Command(PVC_Name,pod_name,namespace)
+            POD1=get_pod_to_exec_Command(pod_name,namespace)
             List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
             event.add_enrichment([
                 MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
@@ -77,6 +77,7 @@ def pods_PVC(api, pvc_name, pvc_namespace):#Returns the POD that claimed the PVC
     try:
         pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
         if pvc.spec.volume_name:
+            print("Volume Name is ",pvc.spec.volume_name)
             pod_list = api.list_namespaced_pod(pvc_namespace)
             for pod in pod_list.items:
                 for volume in pod.spec.volumes:
@@ -122,7 +123,7 @@ def Temp_Pod(persistent_volume):#Creates a temporary Pod and attached the pod wi
     Temp_pod = Pod_Spec.create()
     return Temp_pod
 
-def get_pod_to_exec_Command(pvc_obj,pod_name,pod_namespace): #Returns the Pod with Specific name
+def get_pod_to_exec_Command(pod_name,pod_namespace): #Returns the Pod with Specific name
     pod_list = PodList.listNamespacedPod(pod_namespace).obj
     pod = None
     for pod in pod_list.items:

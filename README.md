@@ -54,12 +54,6 @@ kubectl apply -f Scenario_1.yaml
 playbookRepos:
   my_extra_playbooks:
     url: https://github.com/HamzaXgrid/RobustaPlaybook1.git
-playbooksPersistentVolume: true
-customPlaybooks:
-- triggers:
-  - on_pod_update: {}
-  actions:
-  - my_action: {}
 ```
 2. Now update the values in the helm.
 ```bash
@@ -67,10 +61,18 @@ helm upgrade robusta robusta/robusta --values=generated_values.yaml --set cluste
 ```
 3. Invoke a trigger using below command.
 ```bash
-robusta playbooks trigger my_action name=new-pv-pod namespace=default 
+robusta playbooks trigger List_of_Files_on_PV name=new-pv-pod namespace=default 
 ```
 ## Task 5: Write a function on python which mounts a persistent volume and send the list of files present on that persistent volume to a sink.
-It is somewhat like Zapier/IFTTT for devops, with an emphasis on prebuilt automations and not just "build your own".
+The Function is written in my-actions.py file that send the list of files present on that persistent volume to a sink.
 ## Task 6: Make sure to cover all scenarios
+1. For the scenario1, our action lists the files on PV and sends to sink.
+2. For the scenario2, our action creates a pod and lists the files on PV and sends to sink.
+3. For the scenario3, our action sends the notification that no PV is not claimed by any PVC.
 ## Task 7: Run the action using your generated-values.yaml file and manually.
-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
+```bash
+robusta playbooks trigger List_of_Files_on_PV name=new-pv-volume
+robusta playbooks trigger List_of_Files_on_PV name=task-pv-volume
+```
+
+g
