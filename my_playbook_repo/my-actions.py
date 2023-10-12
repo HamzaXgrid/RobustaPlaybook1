@@ -1,8 +1,24 @@
 
 
 from kubernetes import client
-from hikaru.model.rel_1_26 import *
-from robusta.api import *
+from hikaru.model.rel_1_26 import (
+    Container,
+    ObjectMeta,
+    PersistentVolumeClaimVolumeSource,
+    PodList,
+    PodSpec,
+    Volume,
+    VolumeMount,
+)
+from robusta.api import (
+    FileBlock,
+    Finding,
+    FindingSource,
+    MarkdownBlock,
+    PersistentVolumeEvent,
+    RobustaPod,
+    action,
+)
 
 @action
 def List_of_Files_on_PV(event: PersistentVolumeEvent):
@@ -11,19 +27,17 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
         source=FindingSource.MANUAL,
         aggregation_key="List_of_Files_on_PV",
     )
-    Persistent_Volume = event.get_persistentvolume()
+    persistentVolume = event.get_persistentvolume()
     api = client.CoreV1Api()
-    Persistent_Volume_Name = Persistent_Volume.metadata.name
-    Persistent_Volume_Details = api.read_persistent_volume(Persistent_Volume_Name)
-    if Persistent_Volume_Details.spec.claim_ref is not None:# We are checking whether PV is claimed by any PVC.
-        PVC_Name = Persistent_Volume_Details.spec.claim_ref.name
-        PVC_NameSpace = Persistent_Volume_Details.spec.claim_ref.namespace
-        print(PVC_Name)
-        print(PVC_NameSpace)
-        Pod = pods_PVC(api, PVC_Name, PVC_NameSpace)
+    persistentVolumeName = persistentVolume.metadata.name
+    persistentVolumeDetails = api.read_persistent_volume(persistentVolumeName)
+    if persistentVolumeDetails.spec.claim_ref is not None:# We are checking whether PV is claimed by any PVC.
+        pvcName = persistentVolumeDetails.spec.claim_ref.name
+        pvcNameSpace = persistentVolumeDetails.spec.claim_ref.namespace
+        Pod = podsPvc(api, pvcName , pvcNameSpace)
         if Pod==None:# If no Pod claims any PVC than creates a temporary pod
-            temp_pod = Temp_Pod(persistent_volume=Persistent_Volume)
-            result = temp_pod.exec(f"ls -R {temp_pod.spec.containers[0].volumeMounts[0].mountPath}/")
+            tempPod = temporaryPod(persistentVolume)
+            result = tempPod.exec(f"ls -R {tempPod.spec.containers[0].volumeMounts[0].mountPath}/")
             finding.title = f"Persistent Volume Content:"
             finding.add_enrichment(
                 [
@@ -31,36 +45,33 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
                     FileBlock("Data.txt: ", result.encode()),
                 ]
                 )
-            if temp_pod is not None: # Deletes the Temporary Pod, This is necessary step as we don't want unused resources in our cluster
-                print("Deleting the pod")
-                temp_pod.delete()
+            if tempPod is not None: # Deletes the Temporary Pod, This is necessary step as we don't want unused resources in our cluster
+                tempPod.delete()
                 return
         else:
             mountedVolumeName = None  # Initialize the variable  
             for volume in Pod.spec.volumes:
-                if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == PVC_Name:
+                if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == pvcName :
                     mountedVolumeName = volume.name
             for containers in Pod.spec.containers:
                 #container_name=Pod.containers.name
                 for volumes in containers.volume_mounts: 
                     if volumes.name == mountedVolumeName:
                         podMountPath = containers.volume_mounts[0].mount_path  # We have a volume Path
-                        new_podMountPath = podMountPath[1:] #Removing the Slash from the Mountpath, This part is only necessary if we are executing find command inside the pod instead of ls
+                        newPodMountPath = podMountPath[1:] #Removing the Slash from the Mountpath, This part is only necessary if we are executing find command inside the pod instead of ls
                         #break
-            namespace = PVC_NameSpace
-            pod_name = Pod.metadata.name
-            POD1=get_pod_to_exec_Command(pod_name,namespace)
-            print("Pod >>>",Pod)
-            print("Pod >>>",POD1)
-            List_of_Files = POD1.exec(f"ls -R {new_podMountPath}/")
+            namespace = pvcNameSpace
+            podName = Pod.metadata.name
+            podExec=getPodToExecCommand(podName,namespace)
+            listOfFiles = podExec.exec(f"ls -R {newPodMountPath}/")
             event.add_enrichment([
                 MarkdownBlock("The Name of The PV is "  + mountedVolumeName),
-                FileBlock("FilesList.log", List_of_Files)
+                FileBlock("FilesList.log", listOfFiles)
             ])
             finding.title = f"Persistent Volume Content: "
             finding.add_enrichment(
                 [
-                    FileBlock("Data.txt: ", List_of_Files.encode()),
+                    FileBlock("Data.txt: ", listOfFiles.encode()),
                 ]
             )
     else:
@@ -71,24 +82,23 @@ def List_of_Files_on_PV(event: PersistentVolumeEvent):
     event.add_finding(finding)
 
 
-def pods_PVC(api, pvc_name, pvc_namespace):#Returns the POD that claimed the PVC passed in the function
+def podsPvc(api, pvcName , pvcNameSpace):#Returns the POD that claimed the PVC passed in the function
     try:
-        pvc = api.read_namespaced_persistent_volume_claim(pvc_name, pvc_namespace)
+        pvc = api.read_namespaced_persistent_volume_claim(pvcName , pvcNameSpace)
         if pvc.spec.volume_name:
-            print("Volume Name is ",pvc.spec.volume_name)
-            pod_list = api.list_namespaced_pod(pvc_namespace)
-            for pod in pod_list.items:
+            podList = api.list_namespaced_pod(pvcNameSpace)
+            for pod in podList.items:
                 for volume in pod.spec.volumes:
-                    if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == pvc_name:
+                    if volume.persistent_volume_claim and volume.persistent_volume_claim.claim_name == pvcName :
                         return pod
     except client.exceptions.ApiException as e:
         print(f"Error: {e}")
     return None
 
-def Temp_Pod(persistent_volume):#Creates a temporary Pod and attached the pod with the PVC
+def temporaryPod(persistentVolume):#Creates a temporary Pod and attached the pod with the PVC
     Volumes=[Volume(name="pvc-mount",
                     persistentVolumeClaim=PersistentVolumeClaimVolumeSource(
-                        claimName=persistent_volume.spec.claimRef.name
+                        claimName=persistentVolume.spec.claimRef.name
                     ),
                 )
             ]
@@ -111,21 +121,21 @@ def Temp_Pod(persistent_volume):#Creates a temporary Pod and attached the pod wi
         kind="Pod",
         metadata=ObjectMeta(
             name="volume-inspector",
-            namespace=persistent_volume.spec.claimRef.namespace,
+            namespace=persistentVolume.spec.claimRef.namespace,
         ),
         spec=PodSpec(
             volumes=Volumes,
             containers=Containers,
         ),
     )
-    Temp_pod = Pod_Spec.create()
-    return Temp_pod
+    tempPod = Pod_Spec.create()
+    return tempPod
 
-def get_pod_to_exec_Command(pod_name,pod_namespace): #Returns the Pod with Specific name
-    pod_list = PodList.listNamespacedPod(pod_namespace).obj
+def getPodToExecCommand(podName,podNameSpace): #Returns the Pod with Specific name
+    podList = PodList.listNamespacedPod(podNameSpace).obj
     pod = None
-    for pod in pod_list.items:
-        if pod_name==pod.metadata.name:
+    for pod in podList.items:
+        if podName==pod.metadata.name:
             return pod
     return pod
 
@@ -136,4 +146,4 @@ def get_pod_to_exec_Command(pod_name,pod_namespace): #Returns the Pod with Speci
 
 
 
-#pod.exec(f"find {new_podMountPath} -type f") 
+#pod.exec(f"find {newPodMountPath} -type f") 
